@@ -1,0 +1,12 @@
+/usr/local/_setup_util.py
+/usr/local/env.sh
+/usr/local/setup.bash
+/usr/local/setup.sh
+/usr/local/setup.zsh
+/usr/local/.rosinstall
+/usr/local/etc/catkin/profile.d/05.catkin_make.bash
+/usr/local/etc/catkin/profile.d/05.catkin_make_isolated.bash
+/usr/local/lib/pkgconfig/leap_motion_listener.pc
+/usr/local/share/leap_motion_listener/cmake/leap_motion_listenerConfig.cmake
+/usr/local/share/leap_motion_listener/cmake/leap_motion_listenerConfig-version.cmake
+/usr/local/share/leap_motion_listener/package.xml

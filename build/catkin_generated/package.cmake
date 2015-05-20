@@ -1,0 +1,7 @@
+set(_CATKIN_CURRENT_PACKAGE "leap_motion_listener")
+set(leap_motion_listener_MAINTAINER "jorgearraez <jorgearraez@todo.todo>")
+set(leap_motion_listener_DEPRECATED "")
+set(leap_motion_listener_VERSION "0.0.0")
+set(leap_motion_listener_BUILD_DEPENDS "leap_motion" "roscpp" "rospy" "std_msgs")
+set(leap_motion_listener_RUN_DEPENDS "leap_motion" "roscpp" "rospy" "std_msgs")
+set(leap_motion_listener_BUILDTOOL_DEPENDS "catkin")

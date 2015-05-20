@@ -1,0 +1,8 @@
+prefix=/usr/local
+
+Name: leap_motion_listener
+Description: Description of leap_motion_listener
+Version: 0.0.0
+Cflags: 
+Libs: -L/usr/local/lib 
+Requires: 

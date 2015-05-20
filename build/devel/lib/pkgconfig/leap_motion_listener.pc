@@ -1,0 +1,8 @@
+prefix=/home/jorgearraez/catkin_ws/src/leap_motion_listener/build/devel
+
+Name: leap_motion_listener
+Description: Description of leap_motion_listener
+Version: 0.0.0
+Cflags: 
+Libs: -L/home/jorgearraez/catkin_ws/src/leap_motion_listener/build/devel/lib 
+Requires: 

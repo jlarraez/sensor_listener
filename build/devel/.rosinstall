@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/jorgearraez/catkin_ws/src/leap_motion_listener/build/devel/setup.sh
