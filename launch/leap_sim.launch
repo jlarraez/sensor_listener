@@ -1,0 +1,7 @@
+<launch>
+
+    <node pkg="leap_motion" name="leap_pub" type="sender.py"/>
+    <node pkg="using_markers" name="hand_rviz" type="basic_shapes"/>
+    <node pkg="leap_motion_listener" name="robot_control" type="listener"/>
+
+</launch>
