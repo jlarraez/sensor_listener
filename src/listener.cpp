@@ -18,8 +18,14 @@ float Uplimitex;
 float Downlimitex;
 float Uplimitey;
 float Downlimitey;
+float Uplimitez;
+float Downlimitez;
 const double degree = M_PI/180;
-double rot4 = 0;
+double rot7 = 0;
+double rot0 = 0;
+double rot1 = 0;
+double rot2 = 0;
+double rot3 = 0;
 ros::Publisher robo_pub;
 //tf::TransformBroadcaster broadcaster;
 sensor_msgs::JointState joint_msg_leap;
@@ -36,6 +42,8 @@ void leapmotionCallback(const leap_motion::leapros2::ConstPtr& dataHand)
   // Both limits for x,y,z to avoid small changes
   Uplimitex=dataLastHand_.palmpos.x+0.3;
   Downlimitex=dataLastHand_.palmpos.x-0.3;
+  Uplimitez=dataLastHand_.palmpos.z+0.3;
+  Downlimitez=dataLastHand_.palmpos.z-0.3;
   Uplimitey=dataLastHand_.palmpos.y+0.5;
   Downlimitey=dataLastHand_.palmpos.y-0.5;
 
@@ -48,19 +56,63 @@ void leapmotionCallback(const leap_motion::leapros2::ConstPtr& dataHand)
   {
 	  if (dataHand_.palmpos.x<Downlimitex)
 	  {
-	  ROS_INFO("LEFT");
+		ROS_INFO("LEFT");
 	  }
   }
+
+  if (dataHand_.palmpos.z>Uplimitez)
+  {
+  	ROS_INFO("BACKWARD");
+		joint_msg_leap.header.stamp = ros::Time::now();
+		joint_msg_leap.position[0] = rot0*degree;
+		joint_msg_leap.position[1] = rot1*degree;
+		joint_msg_leap.position[2] = rot2*degree;
+		joint_msg_leap.position[3] = rot3*degree;
+		robo_pub.publish(joint_msg_leap);
+		rot0 -= 1;
+    		if (rot0 < -180) rot0 = 180;
+		rot1 -= 1;
+    		if (rot1 < -180) rot1 = 180;
+		rot2 -= 1;
+    		if (rot2 < -180) rot2 = 180;
+		rot3 -= 1;
+    		if (rot3 < -180) rot3 = 180;
+		
+  }
+  else 
+  {
+	  if (dataHand_.palmpos.z<Downlimitez)
+	  {
+		ROS_INFO("FORWARD");
+		joint_msg_leap.header.stamp = ros::Time::now();
+		joint_msg_leap.position[0] = rot0*degree;
+		joint_msg_leap.position[1] = rot1*degree;
+		joint_msg_leap.position[2] = rot2*degree;
+		joint_msg_leap.position[3] = rot3*degree;
+		robo_pub.publish(joint_msg_leap);
+		rot0 += 1;
+    		if (rot0 > 180) rot0 = -180;
+		rot1 += 1;
+    		if (rot1 > 180) rot1 = -180;
+		rot2 += 1;
+    		if (rot2 > 180) rot2 = -180;
+		rot7 += 1;
+    		if (rot3 > 180) rot3 = -180;
+		robo_pub.publish(joint_msg_leap);
+		//broadcaster.sendTransform(odom_trans);
+	  }
+  }
+
   
   if (dataHand_.palmpos.y>Uplimitey)
   {
-  ROS_INFO("UP");
+  	ROS_INFO("UP");
   }
   else 
   {
 	  if (dataHand_.palmpos.y<Downlimitey)
 	  {
-	  ROS_INFO("DOWN");
+	  	ROS_INFO("DOWN");
 	  }
   }
   
@@ -80,14 +132,7 @@ void leapmotionCallback(const leap_motion::leapros2::ConstPtr& dataHand)
 		//joint_msg_leap.name.resize(8);
 		
 		joint_msg_leap.header.stamp = ros::Time::now();
-		joint_msg_leap.position[0] = 0;
-		joint_msg_leap.position[1] = 0;
-		joint_msg_leap.position[2] = 0;
-		joint_msg_leap.position[3] = 0;
-		joint_msg_leap.position[4] = 0;
-		joint_msg_leap.position[5] = 0;
-		joint_msg_leap.position[6] = 0;
-		joint_msg_leap.position[7] = rot4*degree;
+		joint_msg_leap.position[7] = rot7*degree;
 		/*odom_trans.header.stamp = ros::Time::now();
     		odom_trans.transform.translation.x = 0;
     		odom_trans.transform.translation.y = 0;
@@ -95,8 +140,8 @@ void leapmotionCallback(const leap_motion::leapros2::ConstPtr& dataHand)
     		odom_trans.transform.rotation = 		   tf::createQuaternionMsgFromYaw(0);*/
 		robo_pub.publish(joint_msg_leap);
 		//broadcaster.sendTransform(odom_trans);
-		rot4 += 1;
-    		if (rot4 > 90) rot4 = 0;
+		rot7 += 1;
+    		if (rot7 > 180) rot7 = -180;
 
  		break;
 
@@ -116,7 +161,8 @@ int main(int argc, char **argv)
   ros::init(argc, argv,"listener");
   ros::NodeHandle n;
   ros::Rate r(1);
-  robo_pub = n.advertise<sensor_msgs::JointState>("/joint_states", 100);
+  //robo_pub = n.advertise<sensor_msgs::JointState>("/joint_states", 100);
+  robo_pub = n.advertise<sensor_msgs::JointState>("joint_leap", 100);
   joint_msg_leap.name.resize(8);
   joint_msg_leap.position.resize(8);
   joint_msg_leap.name[0] ="right_front_wheel_joint";
