@@ -1,10 +1,12 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(leap_motion_listener)
+project(sensor_listener)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  moveit_core
+  moveit_ros_planning_interface
   leap_motion
   roscpp
   rospy
@@ -105,16 +107,17 @@ include_directories(
 # )
 
 ## Declare a cpp executable
-add_executable(listener src/listener.cpp)
+#add_executable(listener src/listener_obstacles.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 #add_dependencies( leap_motion_listener_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
- target_link_libraries(listener
-   ${catkin_LIBRARIES}
- )
+ ##target_link_libraries(listener
+   #${catkin_LIBRARIES}
+ #)
+
 
 #############
 ## Install ##
