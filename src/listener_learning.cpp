@@ -41,6 +41,10 @@
 
 #include <boost/bind.hpp>
 
+#include<stdio.h>
+#include <termios.h>            //termios, TCSANOW, ECHO, ICANON
+#include <unistd.h>     //STDIN_FILENO
+
 //#include <tf/transform_datatypes.h>
 //#include <tf/transform_listener.h>
 /**
@@ -58,7 +62,8 @@ geometry_msgs::PoseStamped pose;
 
 
 
-std::string s;
+//std::string s;
+int s;
 const double degree = M_PI/180;
 //von Experiment: max Finger_distance=163 min Finger_distance=14
 //163-14/(0.548-0)=(163-x)/(0.548-y)
@@ -258,6 +263,27 @@ int main(int argc, char **argv)
 {     
       /*Initialise Variables*/
       
+      //Configuring the terminal for the pedals  
+      
+        static struct termios oldt, newt;
+
+        /*tcgetattr gets the parameters of the current terminal
+        STDIN_FILENO will tell tcgetattr that it should write the settings
+        of stdin to oldt*/
+        tcgetattr( STDIN_FILENO, &oldt);
+        /*now the settings will be copied*/
+        newt = oldt;
+
+        /*ICANON normally takes care that one line at a time will be processed
+        that means it will return if it sees a "\n" or an EOF or an EOL*/
+        newt.c_lflag &= ~(ICANON| ECHO);          
+
+        /*Those new settings will be set to STDIN
+        TCSANOW tells tcsetattr to change attributes immediately. */
+        tcsetattr( STDIN_FILENO, TCSANOW, &newt);
+        
+      //End configuring the terminal for the pedals
+            
       CAPTURE_MOVEMENT=false;//know when you have reach the maximum of points to handle
       //Creating the joint_msg_leap
       joint_msg_leap.name.resize(8);
@@ -380,11 +406,16 @@ int main(int argc, char **argv)
       /*Capturing Stage*/
       /*****************/
       ROS_INFO("PRESH ENTER TO START CAPTURING POINTS");
-      while (getline(std::cin,s))
+      /*while (getline(std::cin,s))
       {
-        if ('\n' == getchar())
+        //if ('\n' == getchar())
+        //New Pedal function
+        if ('1' == getchar())
           break;
-      }
+      }*/
+      
+      while((s=getchar())!= '1')      
+        ROS_INFO("PRESH LEFT PEDAL TO START");;
       
       /* SENSOR SUBSCRIBING */
       //LEAP MOTION
@@ -491,7 +522,8 @@ int main(int argc, char **argv)
       
       }  
    //ros::Subscriber myogestsub = n.subscribe("/myo_gest", 1000, myogestCallback);
-        
+     /*restore the old settings*/
+    tcsetattr( STDIN_FILENO, TCSANOW, &oldt);   
       return 0;
 }
 

@@ -102,21 +102,21 @@ include_directories(
 )
 
 ## Declare a cpp library
-# add_library(leap_motion_listener
-#   src/${PROJECT_NAME}/leap_motion_listener.cpp
+ #add_library(leap_motion_listener
+ #  src/${PROJECT_NAME}/leap_motion_listener.cpp
 # )
 
 ## Declare a cpp executable
-#add_executable(listener src/listener_obstacles.cpp)
+add_executable(listener src/listener_learning.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 #add_dependencies( leap_motion_listener_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
- ##target_link_libraries(listener
-   #${catkin_LIBRARIES}
- #)
+ target_link_libraries(listener
+   ${catkin_LIBRARIES}
+)
 
 
 #############
