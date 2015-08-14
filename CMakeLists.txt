@@ -108,6 +108,7 @@ include_directories(
 
 ## Declare a cpp executable
 add_executable(listener src/listener_learning.cpp)
+#add_executable(pedal_security src/pedal_security.cpp)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
@@ -117,6 +118,11 @@ add_executable(listener src/listener_learning.cpp)
  target_link_libraries(listener
    ${catkin_LIBRARIES}
 )
+
+## Specify libraries to link a library or executable target against
+# target_link_libraries(pedal_security
+#   ${catkin_LIBRARIES}
+#)
 
 
 #############
@@ -128,10 +134,10 @@ add_executable(listener src/listener_learning.cpp)
 
 ## Mark executable scripts (Python etc.) for installation
 ## in contrast to setup.py, you can choose the destination
-# install(PROGRAMS
-#   scripts/my_python_script
-#   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
+ install(PROGRAMS
+   src/pedal_security.py
+   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+ )
 
 ## Mark executables and/or libraries for installation
 # install(TARGETS leap_motion_listener leap_motion_listener_node

@@ -415,7 +415,7 @@ int main(int argc, char **argv)
       }*/
       
       while((s=getchar())!= '1')      
-        ROS_INFO("PRESH LEFT PEDAL TO START");;
+        ROS_INFO("PRESH LEFT PEDAL TO START");
       
       /* SENSOR SUBSCRIBING */
       //LEAP MOTION
