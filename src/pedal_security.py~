@@ -12,6 +12,11 @@ import sys
 import roslib
 import actionlib
 import simple_script_server
+import sys
+import tty
+import curses
+
+
 
 
 from schunk_api.srv import *
@@ -45,19 +50,28 @@ We need 1 argument:
 cmd: a STRING argument that is either 'init', 'halt', or 'estop' 
 '''
 def main():
-		
+  # Turn off line buffering
+	stdscr = curses.initscr()
+	curses.cbreak()
+	#tty.setcbreak(sys.stdin)
+	#rospy.init_node('activate_pedal_security')
+  #s = rospy.Service('add_two_ints', AddTwoInts, handle_add_two_ints)	
 	while True:
-		usrIn = str(raw_input("Presh right pedal to quit"))
-		if usrIn == '2':
+		usrIn = stdscr.getch()
+		print("Now requesting Powerball Arm to: " + str(usrIn))  
+		#usrIn = str(raw_input("Presh right pedal to quit"))
+		#usrIn = str(sys.stdin.read(1))
+		
+		if str(usrIn) == '50':
 			# Call the initHalt service with the input:
 		  usrIn ="halt"
 		  initHaltClient(usrIn)
-		print("Now requesting Powerball Arm Driver to stop")   
-		if usrIn == '1':
+		  print("Now requesting Powerball Arm Driver to stop")  
+		#if usrIn == '1':
 			# Call the initHalt service with the input:
-		  usrIn ="init"
+		  #usrIn ="init"
 		  #initHaltClient(usrIn)
-		print("Now requesting Powerball Arm Driver to initialise")        
+		#print("Now requesting Powerball Arm Driver to initialise")        
 	
 	print("Goodbye!")
 

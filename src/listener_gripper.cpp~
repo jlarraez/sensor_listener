@@ -42,6 +42,8 @@
 #include <moveit_msgs/PlanningScene.h>
 
 #include <boost/bind.hpp>
+#include <termios.h>            //termios, TCSANOW, ECHO, ICANON
+#include <unistd.h>     //STDIN_FILENO
 
 //#include <tf/transform_datatypes.h>
 //#include <tf/transform_listener.h>
@@ -60,7 +62,7 @@ geometry_msgs::PoseStamped pose;
 
 
 
-std::string s;
+int s;
 const double degree = M_PI/180;
 //von Experiment: max Finger_distance=163 min Finger_distance=14
 //163-14/(0.548-0)=(163-x)/(0.548-y)
@@ -260,6 +262,27 @@ int main(int argc, char **argv)
 {     
       /*Initialise Variables*/
       
+      //Configuring the terminal for the pedals  
+      
+        static struct termios oldt, newt;
+
+        /*tcgetattr gets the parameters of the current terminal
+        STDIN_FILENO will tell tcgetattr that it should write the settings
+        of stdin to oldt*/
+        tcgetattr( STDIN_FILENO, &oldt);
+        /*now the settings will be copied*/
+        newt = oldt;
+
+        /*ICANON normally takes care that one line at a time will be processed
+        that means it will return if it sees a "\n" or an EOF or an EOL*/
+        newt.c_lflag &= ~(ICANON| ECHO);          
+
+        /*Those new settings will be set to STDIN
+        TCSANOW tells tcsetattr to change attributes immediately. */
+        tcsetattr( STDIN_FILENO, TCSANOW, &newt);
+        
+      //End configuring the terminal for the pedals
+      
       CAPTURE_MOVEMENT=false;//know when you have reach the maximum of points to handle
       //Creating the joint_msg_leap
       joint_msg_leap.name.resize(8);
@@ -393,10 +416,18 @@ int main(int argc, char **argv)
       // ^^^^^^^^^^^^^^^^^^^^^^^
       // We can plan a motion for this group to a desired pose for the 
       // end-effector  
+      
       ROS_INFO("Planning to INITIAL POSE");
       planning_interface::MotionPlanRequest req;
       planning_interface::MotionPlanResponse res;
       geometry_msgs::PoseStamped pose;
+      std::vector<double> tolerance_pose(3, 0.01);
+      std::vector<double> tolerance_angle(3, 0.01);
+      moveit_msgs::Constraints pose_goal = kinematic_constraints::constructGoalConstraints("gripper_base_link", pose, tolerance_pose, tolerance_angle);
+      moveit_msgs::MotionPlanResponse response;
+      moveit_msgs::DisplayTrajectory display_trajectory;
+      ROS_INFO("1");
+      /*
       pose.header.frame_id = "/odom_combined";
       pose.pose.position.x = 0;
       pose.pose.position.y = 0;
@@ -413,7 +444,7 @@ int main(int argc, char **argv)
       // Now, call the pipeline and check whether planning was successful.
       planning_pipeline->generatePlan(planning_scene, req, res);
       /* Check that the planning was successful */
-      if(res.error_code_.val != res.error_code_.SUCCESS)
+      /*if(res.error_code_.val != res.error_code_.SUCCESS)
       {
       ROS_ERROR("Could not compute plan successfully");
       return 0;
@@ -421,18 +452,19 @@ int main(int argc, char **argv)
       // Visualize the result
       // ^^^^^^^^^^^^^^^^^^^^
       /* Visualize the trajectory */
-      moveit_msgs::DisplayTrajectory display_trajectory;
+      /*moveit_msgs::DisplayTrajectory display_trajectory;
       ROS_INFO("Visualizing the trajectory 1");
       moveit_msgs::MotionPlanResponse response;
       res.getMessage(response);
       display_trajectory.trajectory_start = response.trajectory_start;
       display_trajectory.trajectory.push_back(response.trajectory);
       display_publisher.publish(display_trajectory);
+      
       //sleep_time.sleep();
       /* End Planning to a Pose goal 1*/
 
      // First, set the state in the planning scene to the final state of the last plan 
-      robot_state::RobotState& robot_state = planning_scene->getCurrentStateNonConst();
+      /*robot_state::RobotState& robot_state = planning_scene->getCurrentStateNonConst();
       //planning_scene->setCurrentState(response.trajectory_start);
       joint_model_group = robot_state.getJointModelGroup("arm");
       robot_state.setJointGroupPositions(joint_model_group, response.trajectory.joint_trajectory.points.back().positions);
@@ -441,10 +473,14 @@ int main(int argc, char **argv)
       //Open and closing gripper
       
       /* First, set the state in the planning scene to the final state of the last plan */
-      robot_state = planning_scene->getCurrentStateNonConst();
+      
+      robot_state::RobotState& robot_state = planning_scene->getCurrentStateNonConst();
+      //robot_state = planning_scene->getCurrentStateNonConst();
       planning_scene->setCurrentState(response.trajectory_start);
+      ROS_INFO("2");
       const robot_state::JointModelGroup* joint_model_groupgripper = robot_state.getJointModelGroup("gripper");
-      robot_state.setJointGroupPositions(joint_model_groupgripper, response.trajectory.joint_trajectory.points.back().positions);
+      ROS_INFO("3");
+      //robot_state.setJointGroupPositions(joint_model_groupgripper, response.trajectory.joint_trajectory.points.back().positions);
       ROS_INFO("try opening gripper");
       robot_state::RobotState goal_state(robot_model);
       std::vector<double> joint_values(2, 0.0);
@@ -455,7 +491,9 @@ int main(int argc, char **argv)
       //joint_values[4] = 0.02;
       //joint_values[5] = 0.02;
       //joint_values[2] = -0.15;
-      goal_state.setJointGroupPositions(joint_model_groupgripper, joint_values);
+      ROS_INFO("4");
+      goal_state.setJointGroupPositions(joint_model_groupgripper, joint_values);4ROS_INFO("4");
+      ROS_INFO("5");
       moveit_msgs::Constraints joint_goal = kinematic_constraints::constructGoalConstraints(goal_state, joint_model_groupgripper);
       req.goal_constraints.clear();
       req.goal_constraints.push_back(joint_goal);
@@ -489,12 +527,9 @@ int main(int argc, char **argv)
       
       /*Capturing Stage*/
       /*****************/
-      ROS_INFO("PRESH ENTER TO START CAPTURING POINTS");
-      while (getline(std::cin,s))
-      {
-        if ('\n' == getchar())
-          break;
-      }
+       ROS_INFO("PRESH LEFT PEDAL TO START");
+      while((s=getchar())!= '1')      
+        ROS_INFO("PRESH LEFT PEDAL TO START");
       
       /* SENSOR SUBSCRIBING */
       //LEAP MOTION

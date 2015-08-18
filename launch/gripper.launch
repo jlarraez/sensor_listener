@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<launch>
+	<arg name="model" />
+	<arg name="gui" default="False" />
+	<param name="robot_description" textfile="$(arg model)" />
+	<param name="use_gui" value="$(arg gui)"/>
+	
+	<node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
+	<rosparam param="source_list">["/joint_leap"]</rosparam>
+	<node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
+	<node name="rviz" pkg="rviz" type="rviz" args="-d $(find urdf_tutorial)/urdf.rviz" required="true" />
+	
+	<!--Node that read data from LeapMotion and publish it -->
+  <node name="leap_motion" pkg="leap_motion" type="sender.py" respawn="false" />
+	
+	<node name="listener" pkg="sensor_listener" type="listener" respawn="false" output="screen"/>
+	
+	<!--To roslaunch write: roslaunch sensor_listener gripper.launch model:=urdf/scout-roboter.urdf gui:=True topic:=/joint_leap-->
+</launch>

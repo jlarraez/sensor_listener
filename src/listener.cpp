@@ -12,7 +12,7 @@
  * This tutorial demonstrates simple receipt of messages over the ROS system.
  */
 /*Global Variables*/
-std_msgs::UInt8 myogest_;
+//std_msgs::UInt8 myogest_;
 leap_motion::leapros2 dataHand_;
 leap_motion::leapros2 dataLastHand_;
 
@@ -49,7 +49,7 @@ ros::Publisher robo_pub;
 sensor_msgs::JointState joint_msg_leap;
 
 
-void myogestCallback( const std_msgs::UInt8::ConstPtr& myogest)
+/*void myogestCallback( const std_msgs::UInt8::ConstPtr& myogest)
 {
       
       myogest_=(*myogest);
@@ -70,7 +70,7 @@ void myogestCallback( const std_msgs::UInt8::ConstPtr& myogest)
 	      //ROS_INFO("FORWARD");
 	      myo_state=3;
       }
-}
+}*/
 void leapmotionCallback(const leap_motion::leapros2::ConstPtr& dataHand)
 {
       dataHand_=(*dataHand);
@@ -94,8 +94,7 @@ void leapmotionCallback(const leap_motion::leapros2::ConstPtr& dataHand)
 	      ROS_INFO("LEFT");
         }
       }
-      if (myo_state==3)
-      {
+      
             //Movement in y-direction
             if (dataHand_.palmpos.y>Uplimitey)
             {
@@ -150,8 +149,8 @@ void leapmotionCallback(const leap_motion::leapros2::ConstPtr& dataHand)
 
 	                  break;
             }
-      }
-      else
+      //}
+      /*else
       {
       //we move the platform reading the myo global variable
             switch (myo_state)
@@ -192,7 +191,7 @@ void leapmotionCallback(const leap_motion::leapros2::ConstPtr& dataHand)
                         if (rot8 < -180) rot8 = 180; 
                         break;                       
             }
-      }
+      }*/
       //save new value of the last position of the hand
       dataLastHand_=(*dataHand);
 
@@ -226,7 +225,7 @@ int main(int argc, char **argv)
       joint_msg_leap.name[8] ="left_back_wheel_joint";
       //sensor subscription
       ros::Subscriber leapsub = n.subscribe("/leapmotion/data", 1000, leapmotionCallback);
-      ros::Subscriber myogestsub = n.subscribe("/myo_gest", 1000, myogestCallback);
+      //ros::Subscriber myogestsub = n.subscribe("/myo_gest", 1000, myogestCallback);
       ros::spin();
       return 0;
 }

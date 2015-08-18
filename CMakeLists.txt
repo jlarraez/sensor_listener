@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   tf
+  
 )
 
 ## System dependencies are found with CMake's conventions
@@ -107,7 +108,9 @@ include_directories(
 # )
 
 ## Declare a cpp executable
-add_executable(listener src/listener_learning.cpp)
+#add_executable(listener_learning src/listener_learning.cpp)
+add_executable(listener_direct src/listener_direct.cpp)
+#add_executable(listener src/listener.cpp)
 #add_executable(pedal_security src/pedal_security.cpp)
 
 ## Add cmake target dependencies of the executable/library
@@ -115,9 +118,16 @@ add_executable(listener src/listener_learning.cpp)
 #add_dependencies( leap_motion_listener_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
- target_link_libraries(listener
-   ${catkin_LIBRARIES}
+# target_link_libraries(listener_learning
+#   ${catkin_LIBRARIES}
+#)
+# target_link_libraries(listener
+#   ${catkin_LIBRARIES}
+#)
+ target_link_libraries(listener_direct
+   ${catkin_LIBRARIES} -lpython2.7
 )
+
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(pedal_security
@@ -136,6 +146,7 @@ add_executable(listener src/listener_learning.cpp)
 ## in contrast to setup.py, you can choose the destination
  install(PROGRAMS
    src/pedal_security.py
+   src/kinematic_functions.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 
@@ -163,7 +174,6 @@ add_executable(listener src/listener_learning.cpp)
 #############
 ## Testing ##
 #############
-
 ## Add gtest based cpp test target and link libraries
 # catkin_add_gtest(${PROJECT_NAME}-test test/test_leap_motion_listener.cpp)
 # if(TARGET ${PROJECT_NAME}-test)

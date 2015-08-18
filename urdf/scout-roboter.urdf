@@ -1,0 +1,192 @@
+<?xml version="1.0"?>
+<robot name="flexible">
+  <link name="base_link">
+    <visual>
+      <geometry>
+        <cylinder length="0.5" radius="0.6"/>
+      </geometry>
+      <material name="white">
+        <color rgba="1 1 1 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <link name="axis_1">
+    <visual>
+      <geometry>
+        <box size="1 .2 .1"/>
+      </geometry>
+      <origin rpy="0 -1.57075 0" xyz="0 0 0.6"/>
+      <material name="blue">
+        <color rgba="0 0 .8 1"/>
+      </material>
+    </visual>
+  </link>
+
+
+  <joint name="axis1_joint" type="revolute">
+    <axis xyz="1 0 0"/>
+    <parent link="base_link"/>
+    <child link="axis_1"/>
+    <origin xyz="0 0 0.25"/>
+    <limit effort="100" lower="-0.548" upper="0.548" velocity="100"/>
+    <joint_properties damping="0.0" friction="0.0"/>
+  </joint>
+  
+  <link name="axis_2">
+    <visual>
+      <geometry>
+        <box size="1 .2 .1"/>
+      </geometry>
+      <origin rpy="0 -1.57075 0" xyz="0 0 0.4"/>
+      <material name="white">
+      </material>
+    </visual>
+  </link>
+
+
+  <joint name="axis2_joint" type="revolute">
+    <axis xyz="1 0 0"/>
+    <parent link="axis_1"/>
+    <child link="axis_2"/>
+    <origin xyz="0 0 1"/>
+    <limit effort="100" lower="-0.548" upper="0.548" velocity="100"/>
+    <joint_properties damping="0.0" friction="0.0"/>
+  </joint>
+  
+    <link name="base_gripper">
+    <visual>
+      <geometry>
+        <box size="0.1 .2 .1"/>
+      </geometry>
+      <origin rpy="0 -1.57075 0" xyz="0 0 0.0"/>
+      <material name="blue">
+      </material>
+    </visual>
+  </link>
+
+
+  <joint name="base_gripper_joint" type="revolute">
+    <axis xyz="1 0 0"/>
+    <parent link="axis_2"/>
+    <child link="base_gripper"/>
+    <origin xyz="0 0 0.9"/>
+    <limit effort="100" lower="-0.548" upper="0.548" velocity="100"/>
+    <joint_properties damping="0.0" friction="0.0"/>
+  </joint>
+
+
+  
+  <joint name="right_gripper_joint" type="revolute">
+    <axis xyz="0 1 0"/>
+    <limit effort="1000.0" lower="0.0" upper="0.548" velocity="0.5"/>
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <parent link="base_gripper"/>
+    <child link="right_gripper"/>
+  </joint>
+
+<link name="right_gripper">
+    <visual>
+      <geometry>
+        <box size="0.4 .2 .1"/>
+      </geometry>
+      <origin rpy="0 -1.57075 0" xyz="0.05 0 0.05"/>
+      <material name="blue">
+
+      </material>
+    </visual>
+</link>
+    <joint name="left_gripper_joint" type="revolute">
+    <axis xyz="0 -1 0"/>
+    <limit effort="1000.0" lower="0.0" upper="0.548" velocity="0.5"/>
+    <origin rpy="0 0 0" xyz="0 0 0"/>
+    <parent link="base_gripper"/>
+    <child link="left_gripper"/>
+  </joint>
+
+<link name="left_gripper">
+    <visual>
+      <geometry>
+        <box size="0.4 .2 .1"/>
+      </geometry>
+      <origin rpy="0 -1.57075 0" xyz="-0.05 0 0.05"/>
+      <material name="blue">
+        <color rgba="0 0 .8 1"/>
+      </material>
+    </visual>
+  </link>
+ <link name="right_front_wheel">
+    <visual>
+      <geometry>
+        <cylinder length=".1" radius="0.035"/>
+      </geometry>
+      <material name="black">
+        <color rgba="0 0 0 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <joint name="right_front_wheel_joint" type="continuous">
+    <axis xyz="0 0 1"/>
+    <parent link="base_link"/>
+    <child link="right_front_wheel"/>
+    <origin rpy="0 1.57075 0" xyz="0.2 0.133333333333 -0.25"/>
+    <limit effort="100" velocity="100"/>
+    <joint_properties damping="0.0" friction="0.0"/>
+  </joint>
+
+  <link name="right_back_wheel">
+    <visual>
+      <geometry>
+        <cylinder length=".1" radius="0.035"/>
+      </geometry>
+      <material name="black"/>
+    </visual>
+  </link>
+
+  <joint name="right_back_wheel_joint" type="continuous">
+    <axis xyz="0 0 1"/>
+    <parent link="base_link"/>
+    <child link="right_back_wheel"/>
+    <origin rpy="0 1.57075 0" xyz="0.2 -0.133333333333 -0.25"/>
+    <limit effort="100" velocity="100"/>
+    <joint_properties damping="0.0" friction="0.0"/>
+  </joint>
+  <link name="left_front_wheel">
+    <visual>
+      <geometry>
+        <cylinder length=".1" radius="0.035"/>
+      </geometry>
+      <material name="black"/>
+    </visual>
+  </link>
+
+  <joint name="left_front_wheel_joint" type="continuous">
+    <axis xyz="0 0 1"/>
+    <parent link="base_link"/>
+    <child link="left_front_wheel"/>
+    <origin rpy="0 1.57075 0" xyz="-0.2 0.133333333333 -0.25"/>
+    <limit effort="100" velocity="100"/>
+    <joint_properties damping="0.0" friction="0.0"/>
+  </joint>
+
+  <link name="left_back_wheel">
+    <visual>
+      <geometry>
+        <cylinder length=".1" radius="0.035"/>
+      </geometry>
+      <material name="black"/>
+    </visual>
+  </link>
+
+  <joint name="left_back_wheel_joint" type="continuous">
+    <axis xyz="0 0 1"/>
+    <parent link="base_link"/>
+    <child link="left_back_wheel"/>
+    <origin rpy="0 1.57075 0" xyz="-0.2 -0.133333333333 -0.25"/>
+    <limit effort="100" velocity="100"/>
+    <joint_properties damping="0.0" friction="0.0"/>
+  </joint>
+    
+</robot>
+

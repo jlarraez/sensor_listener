@@ -41,9 +41,15 @@
 
 #include <boost/bind.hpp>
 
+//Pedal includes for changing way we read values from keyboard
 #include<stdio.h>
-#include <termios.h>            //termios, TCSANOW, ECHO, ICANON
+#include <termios.h>     //termios, TCSANOW, ECHO, ICANON
 #include <unistd.h>     //STDIN_FILENO
+
+//Allow to use Pythons scripts
+#include </usr/include/python2.7/Python.h>
+#include <numpy/arrayobject.h>
+//In order to work export PYTHONPATH="${PYTHONPATH}:/home/jorgearraez/catkin_ws/src/sensor_listener/src and create __init__.py in that directory"
 
 //#include <tf/transform_datatypes.h>
 //#include <tf/transform_listener.h>
@@ -60,9 +66,10 @@ geometry_msgs::PoseStamped old_pose;
 geometry_msgs::PoseStamped pose;
 
 
+//We define the 4x4 Matrix wit the orientation and the position
 
 
-//std::string s;
+//std::string Pythonscript="kinematic_functions.py";
 int s;
 const double degree = M_PI/180;
 //von Experiment: max Finger_distance=163 min Finger_distance=14
@@ -259,31 +266,48 @@ public:
 }*/
 
 
-int main(int argc, char **argv)
+int main(int argc, char *argv[])
 {     
       /*Initialise Variables*/
       
       //Configuring the terminal for the pedals  
-      
+     /* 
         static struct termios oldt, newt;
 
         /*tcgetattr gets the parameters of the current terminal
         STDIN_FILENO will tell tcgetattr that it should write the settings
         of stdin to oldt*/
-        tcgetattr( STDIN_FILENO, &oldt);
+    //    tcgetattr( STDIN_FILENO, &oldt);
         /*now the settings will be copied*/
-        newt = oldt;
+     //   newt = oldt;
 
         /*ICANON normally takes care that one line at a time will be processed
         that means it will return if it sees a "\n" or an EOF or an EOL*/
-        newt.c_lflag &= ~(ICANON| ECHO);          
+     //   newt.c_lflag &= ~(ICANON| ECHO);          
 
         /*Those new settings will be set to STDIN
         TCSANOW tells tcsetattr to change attributes immediately. */
-        tcsetattr( STDIN_FILENO, TCSANOW, &newt);
+     //   tcsetattr( STDIN_FILENO, TCSANOW, &newt);
         
       //End configuring the terminal for the pedals
-            
+      
+      /*Run a python function code*/
+      
+    PyObject *pName, *pModule, *pDict, *pFunc;
+    PyObject *pArgs, *pValue;
+    long value_python=0;
+    const char* PythonFile="kinematic_functions";
+    //std::string PythonFunction="ikine";
+    const char* PythonFunction="multiply";
+    int i=0;
+
+    
+      
+      
+      /* End run a python script*/
+      
+      
+          
       CAPTURE_MOVEMENT=false;//know when you have reach the maximum of points to handle
       //Creating the joint_msg_leap
       joint_msg_leap.name.resize(8);
@@ -303,6 +327,84 @@ int main(int argc, char **argv)
 
       //ROS DECLARATION
       ros::init(argc, argv,"listener");
+
+      //Use a python Function in C++
+      Py_Initialize();
+      pName = PyString_FromString(PythonFile);
+
+      pModule = PyImport_Import(pName);
+      ROS_INFO("given name of file");
+      //Py_DECREF(pName);
+
+      if (pModule != NULL) {
+          pFunc = PyObject_GetAttrString(pModule, PythonFunction);
+          /* pFunc is a new reference */
+
+          if (pFunc && PyCallable_Check(pFunc)) {
+          
+              ROS_INFO("Function exist");
+              pArgs = PyTuple_New(2);
+              
+              value_python=3;
+              pValue = PyInt_FromLong(value_python);
+              ROS_INFO("first value given");
+              //pValue="";
+              if (!pValue) {
+                  Py_DECREF(pArgs);
+                  Py_DECREF(pModule);
+                  fprintf(stderr, "Cannot convert argument 1\n");
+                  return 1;
+              }
+              /* pValue reference stolen here: */
+              ROS_INFO("first value in Tuple");
+              PyTuple_SetItem(pArgs, i, pValue);
+              i++;
+              pValue = PyInt_FromLong(value_python);
+              ROS_INFO("second value given");
+              if (!pValue) {
+                  Py_DECREF(pArgs);
+                  Py_DECREF(pModule);
+                  fprintf(stderr, "Cannot convert argument 2\n");
+                  return 1;
+              }
+              PyTuple_SetItem(pArgs, i, pValue);
+
+              pValue = PyObject_CallObject(pFunc, pArgs);
+              Py_DECREF(pArgs);
+              if (pValue != NULL) {
+                  printf("Result of call: %ld\n", PyInt_AsLong(pValue));
+                  Py_DECREF(pValue);
+              }
+              else {
+                  Py_DECREF(pFunc);
+                  Py_DECREF(pModule);
+                  PyErr_Print();
+                  fprintf(stderr,"Call failed\n");
+                  return 1;
+              }
+          }
+          else {
+              if (PyErr_Occurred())
+                  PyErr_Print();
+              fprintf(stderr, "Cannot find function \"%s\"\n", argv[2]);
+          }
+          Py_XDECREF(pFunc);
+          Py_DECREF(pModule);
+      }
+      else {
+          PyErr_Print();
+          fprintf(stderr, "Failed to load \"%s\"\n", argv[1]);
+          return 1;
+      }
+      Py_Finalize();
+      
+      
+      
+      
+      
+      
+      
+      /*
       if (argc != 2)
       {
         ROS_WARN("WARNING: you should specify number of points to capture");
@@ -329,98 +431,15 @@ int main(int argc, char **argv)
       //Creating a Robot Model
       robot_model_loader::RobotModelLoader robot_model_loader("robot_description");
       robot_model::RobotModelPtr robot_model = robot_model_loader.getModel();
-      
-      /* MOVEIT Setup*/
-      // ^^^^^
-      moveit::planning_interface::MoveGroup group("arm");
-      group.setPlanningTime(0.5);
-      moveit::planning_interface::MoveGroup::Plan my_plan;
-      // We will use the :planning_scene_interface:`PlanningSceneInterface`
-      // class to deal directly with the world.
-      moveit::planning_interface::PlanningSceneInterface planning_scene_interface;  
-      
-      // Create a publisher for visualizing plans in Rviz.
-      ros::Publisher display_publisher = node_handle.advertise<moveit_msgs::DisplayTrajectory>("/move_group/display_planned_path", 1, true);
-      planning_scene::PlanningScenePtr planning_scene(new planning_scene::PlanningScene(robot_model));
-      planning_pipeline::PlanningPipeline *planning_pipeline= new planning_pipeline::PlanningPipeline(robot_model,node_handle,"planning_plugin", "request_adapters");
-
-      /* Sleep a little to allow time to startup rviz, etc. */
-      ros::WallDuration sleep_time(20.0);
-      sleep_time.sleep();  
-      /*end of MOVEIT Setup*/
-
-      // We can print the name of the reference frame for this robot.
-      ROS_INFO("Reference frame: %s", group.getPlanningFrame().c_str());
-      // We can also print the name of the end-effector link for this group.
-      ROS_INFO("Reference frame: %s", group.getEndEffectorLink().c_str());
-      
-      // Planning to a Pose goal 1
-      // ^^^^^^^^^^^^^^^^^^^^^^^
-      // We can plan a motion for this group to a desired pose for the 
-      // end-effector  
-      ROS_INFO("Planning to INITIAL POSE");
-      planning_interface::MotionPlanRequest req;
-      planning_interface::MotionPlanResponse res;
-      geometry_msgs::PoseStamped pose;
-      pose.header.frame_id = "/odom_combined";
-      pose.pose.position.x = 0;
-      pose.pose.position.y = 0;
-      pose.pose.position.z = 1.15;
-      pose.pose.orientation.w = 1.0;
-      std::vector<double> tolerance_pose(3, 0.01);
-      std::vector<double> tolerance_angle(3, 0.01);
-      old_pose=pose;
-      
-      // We will create the request as a constraint using a helper function available
-      req.group_name = "arm";
-      moveit_msgs::Constraints pose_goal = kinematic_constraints::constructGoalConstraints("gripper_base_link", pose, tolerance_pose, tolerance_angle);
-      req.goal_constraints.push_back(pose_goal);
-      // Now, call the pipeline and check whether planning was successful.
-      planning_pipeline->generatePlan(planning_scene, req, res);
-      /* Check that the planning was successful */
-      if(res.error_code_.val != res.error_code_.SUCCESS)
-      {
-      ROS_ERROR("Could not compute plan successfully");
-      return 0;
-      }
-      // Visualize the result
-      // ^^^^^^^^^^^^^^^^^^^^
-      /* Visualize the trajectory */
-      moveit_msgs::DisplayTrajectory display_trajectory;
-      ROS_INFO("Visualizing the trajectory 1");
-      moveit_msgs::MotionPlanResponse response;
-      res.getMessage(response);
-      display_trajectory.trajectory_start = response.trajectory_start;
-      display_trajectory.trajectory.push_back(response.trajectory);
-      display_publisher.publish(display_trajectory);
-      //sleep_time.sleep();
-      /* End Planning to a Pose goal 1*/
-
-     // First, set the state in the planning scene to the final state of the last plan 
-      robot_state::RobotState& robot_state = planning_scene->getCurrentStateNonConst();
-      planning_scene->setCurrentState(response.trajectory_start);
-      joint_model_group = robot_state.getJointModelGroup("arm");
-      robot_state.setJointGroupPositions(joint_model_group, response.trajectory.joint_trajectory.points.back().positions);
-      spinner.stop();
-      
-      /*Capturing Stage*/
-      /*****************/
-      //ROS_INFO("PRESH ENTER TO START CAPTURING POINTS");
-      /*while (getline(std::cin,s))
-      {
-        //if ('\n' == getchar())
-        //New Pedal function
-        if ('1' == getchar())
-          break;
-      }*/
+     
       ROS_INFO("PRESH LEFT PEDAL TO START");
       while((s=getchar())!= '1')      
         ROS_INFO("PRESH LEFT PEDAL TO START");
       /* SENSOR SUBSCRIBING */
       //LEAP MOTION
-      ROS_INFO("SUBSCRIBING LEAPMOTION");
+      /*ROS_INFO("SUBSCRIBING LEAPMOTION");
       ros::Subscriber leapsub = node_handle.subscribe("/leapmotion/data", 1000, &LeapMotionListener::leapmotionCallback, &leapmotionlistener);
-      ros::Subscriber trajectorysub = node_handle.subscribe("/move_group/", 1000, &LeapMotionListener::leapmotionCallback, &leapmotionlistener);
+
       while(!CAPTURE_MOVEMENT==true)
       {
        
@@ -434,7 +453,7 @@ int main(int argc, char **argv)
       /* Start Creating Arm Trajectory*/
       /**********************************/
       
-      ROS_INFO("START CREATING ARM TRAJECTORY");
+      /*ROS_INFO("START CREATING ARM TRAJECTORY");
       
       for (unsigned i=0; i<trajectory_hand.size(); i++)
       {
@@ -459,72 +478,26 @@ int main(int argc, char **argv)
         Downdifferencey=dataLastHand_.palmpos.y-20;
         if ((trajectory_hand.at(i).palmpos.x<Downdifferencex)||(trajectory_hand.at(i).palmpos.x>Updifferencex)||(trajectory_hand.at(i).palmpos.y<Downdifferencey)||(trajectory_hand.at(i).palmpos.y>Updifferencey)||(trajectory_hand.at(i).palmpos.z<Downdifferencez)||(trajectory_hand.at(i).palmpos.z>Updifferencez))
           {
-            
-            ros::AsyncSpinner spinner(1);
-            spinner.start();
             ROS_INFO("TRYING TO ADD POINT %d TO TRAJECTORY",arm_trajectory_point);
-            // Cartesian Paths
-            // ^^^^^^^^^^^^^^^
-            // You can plan a cartesian path directly by specifying a list of waypoints
-            // for the end-effector to go through. Note that we are starting
-            // from the new start state above. The initial pose (start state) does not
-            // need to be added to the waypoint list.
-            pose.header.frame_id = "/odom_combined";
-            pose.pose.orientation.w = 1.0;
-            pose.pose.position.y +=(trajectory_hand.at(i).palmpos.x-dataLastHand_.palmpos.x)/500 ;
-            pose.pose.position.z +=(trajectory_hand.at(i).palmpos.y-dataLastHand_.palmpos.y)/1000 ;
-            if(pose.pose.position.z>Uplimitez)
-            pose.pose.position.z=Uplimitez;
-            pose.pose.position.x +=-(trajectory_hand.at(i).palmpos.z-dataLastHand_.palmpos.z)/500 ;
-            ROS_INFO("END EFFECTOR POSITION \n X: %f\n  Y: %f\n Z: %f\n", pose.pose.position.x,pose.pose.position.y,pose.pose.position.z);
+            
             ROS_INFO("Palmpos \n X: %f\n  Y: %f\n Z: %f\n ",trajectory_hand.at(i).palmpos.x,trajectory_hand.at(i).palmpos.y,trajectory_hand.at(i).palmpos.z);
             // We will create the request as a constraint using a helper function available
-            ROS_INFO("1");
-            pose_goal= kinematic_constraints::constructGoalConstraints("gripper_base_link", pose, tolerance_pose, tolerance_angle);
-            ROS_INFO("2");
-            req.goal_constraints.push_back(pose_goal);
             
-            // Now, call the pipeline and check whether planning was successful.
-            planning_pipeline->generatePlan(planning_scene, req, res);
-            ROS_INFO("3");
-            if(res.error_code_.val != res.error_code_.SUCCESS)
-            {
-            ROS_ERROR("Could not compute plan successfully");
-            pose=old_pose;
-            }
-            else
-            {
-            
-            arm_trajectory_point++;
-            // Visualize the trajectory 
-            ROS_INFO("VISUALIZING NEW POINT");
-            //req.goal_constraints.clear();
-            res.getMessage(response);
-            display_trajectory.trajectory_start = response.trajectory_start;
-            ROS_INFO("AXIS 1 NEXT TRAJECTORY IS %f\n",response.trajectory_start.joint_state.position[1] );
-            display_trajectory.trajectory.push_back(response.trajectory); 
-            // Now you should see two planned trajectories in series
-            display_publisher.publish(display_trajectory);
-            planning_scene->setCurrentState(response.trajectory_start);
-            robot_state.setJointGroupPositions(joint_model_group, response.trajectory.joint_trajectory.points.back().positions);
-            req.goal_constraints.clear();
-            old_pose=pose;
             dataLastHand_.palmpos.x=trajectory_hand.at(i).palmpos.x;
             dataLastHand_.palmpos.y=trajectory_hand.at(i).palmpos.y;
             dataLastHand_.palmpos.z=trajectory_hand.at(i).palmpos.z;
-            }
-            //sleep(2);
-            spinner.stop();     
           }
-          
+    
         }
+          
+      }
       
-      }  
+      */  
    //ros::Subscriber myogestsub = n.subscribe("/myo_gest", 1000, myogestCallback);
      /*restore the old settings*/
     //tcsetattr( STDIN_FILENO, TCSANOW, &oldt);   
-      while (true);
-      return 0;
+      //while (true);
+      //return 0;
 }
 
 
