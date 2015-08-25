@@ -1,0 +1,9 @@
+float64 xCoord
+float64 yCoord
+float64 zCoord
+float64 quatX
+float64 quatY
+float64 quatZ
+float64 quatW
+---
+int64 status

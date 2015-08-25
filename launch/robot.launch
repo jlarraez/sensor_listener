@@ -1,24 +1,37 @@
 <?xml version="1.0"?>
 <launch>
 
-  <!--Planning parameter-->
-  <arg name="planning_plugin" value="ompl_interface/OMPLPlanner" />
-  <arg name="planning_adapters" value="default_planner_request_adapters/AddTimeParameterization default_planner_request_adapters/FixWorkspaceBounds default_planner_request_adapters/FixStartStateBounds default_planner_request_adapters/FixStartStateCollision default_planner_request_adapters/FixStartStatePathConstraints" />
-  
+  <!--MoveItPlanning parameter-->
+  <!--<arg name="planning_plugin" value="ompl_interface/OMPLPlanner" />-->
+  <!--<arg name="planning_adapters" value="default_planner_request_adapters/AddTimeParameterization default_planner_request_adapters/FixWorkspaceBounds default_planner_request_adapters/FixStartStateBounds default_planner_request_adapters/FixStartStateCollision default_planner_request_adapters/FixStartStatePathConstraints" />
+  -->
+  <!--Rviz-ohne MoveIt paramteter-->
+  <arg name="model" value="$(find sensor_listener)/urdf/powerball_gripper.urdf" />
+  <arg name="gui" value="True" />
+	<param name="robot_description" textfile="$(arg model)" />
+	<param name="use_gui" value="$(arg gui)"/>
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find urdf_tutorial)/urdf.rviz" required="true" />
+
+	<node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
+	<rosparam param="source_list">["/joint_leap"]</rosparam>
+	<node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
+	
   <!--Node that read data from LeapMotion and publish it -->
   <node name="leap_motion" pkg="leap_motion" type="sender.py" respawn="false" />
   
   <!--Main Node that take make the Moveit Planning-->
-  <include file="$(find schunk_gripper_moveit_config)/launch/demo.launch"/>
- <!-- <node name="listener" pkg="sensor_listener" type="listener_learning" respawn="false" output="screen" args="600 kinematic">-->
- <node name="listener" pkg="sensor_listener" type="listener_learning" respawn="false" output="screen" args="kinematic_functions.py ikine" />
+  <!--Launch Rviz and joint-robot publisher for the Moveit Planning-->
+  <!--<include file="$(find schunk_gripper_moveit_config)/launch/demo.launch"/>-->
+  <node name="listener" pkg="sensor_listener" type="listener_direct" respawn="false" output="screen" args="600 ">
+ <!--Parametets for MoveIt planning-->
+   <!--
     <param name="planning_plugin" value="$(arg planning_plugin)" />
     <param name="request_adapters" value="$(arg planning_adapters)" />
-    <param name="start_state_max_bounds_error" value="0.1" />
+    <param name="start_state_max_bounds_error" value="0.1" />-->
   </node>
   
   <!-- Start the Security pedal Node-->
-	<node pkg="sensor_listener" type="pedal_security.py" name="security_pedal_node" respawn="true" output="screen"/>
+	<!--<node pkg="sensor_listener" type="pedal_security.py" name="security_pedal_node" respawn="true" output="screen"/>-->
 	
   
 

@@ -11,8 +11,6 @@ Last Updated: 3/2/15 - 4:23 PM
 from powerball_constants import *
 import math
 import numpy as np
-import sys
-sys.path.insert(0, "./home/jorgearraez/catkin_ws/src/sensor_listener/src")
 
 ''' 
 This function takes in a numpy array representing a 3x1 vector and returns
@@ -300,12 +298,7 @@ Arguments:
 T06 - a numpy.matrix containing the 4x4 homogenous transformation matrix.
 thP - a Python list containing the current joint angles.   
 '''
-def multiply(a,b):
-    print "Will compute", a, "times", b
-    c = 0
-    for i in range(0, a):
-        c = a + b
-    return c
+
 def ikine(T06, thP):
 	
 	# Create the matrix that will hold the Inverse Kinematics solution:
@@ -318,8 +311,8 @@ def ikine(T06, thP):
 	d1 = 205
 	a2 = 350
 	d4 = 305
-	d6 = 300
-
+	# with Gripper d6 = 300
+	d6 = 75
 	# Solve for theta 3 (Joint 3 angle): 	 
 
 	# Vector from the spherical wrist to the tooltip:
@@ -336,11 +329,11 @@ def ikine(T06, thP):
 	#print("dElbow is: " + str(dElbow)) # TEST PASSED 2/6/15 - 2:29 PM
 
 	dElbowNorm = np.linalg.norm(dElbow)	
-	#print("dElbowNorm is: " + str(dElbowNorm)) # TEST PASSED 2/6/15 - 2:33 PM
+	print("dElbowNorm is: " + str(dElbowNorm)) # TEST PASSED 2/6/15 - 2:33 PM
 
 	# Angle of Elbow (found by Law of Cosines)
 	temp = math.pi - math.acos( ( (a2**2)+(d4**2)-(dElbowNorm**2))/(2*a2*d4))
-	#print("temp is: " + str(temp)) # TEST PASSED 2/6/15 - 2:33 PM
+	print("temp is: " + str(temp)) # TEST PASSED 2/6/15 - 2:33 PM
 
 	# 8 Solutions - first 4 rows are for elbow up; bottom 4 are elbow down:
 	thIK[2][0] = thIK[2][1] = thIK[2][2] = thIK[2][3] = temp
@@ -383,10 +376,10 @@ def ikine(T06, thP):
 	theta12 = elbowDownSolution[0]
 	theta22 = elbowDownSolution[1]
 	
-	print("theta11: " + str(theta11))
-	print("theta21: " + str(theta21))
-	print("theta12: " + str(theta12))
-	print("theta22: " + str(theta22))
+	#print("theta11: " + str(theta11))
+	#print("theta21: " + str(theta21))
+	#print("theta12: " + str(theta12))
+	#print("theta22: " + str(theta22))
 
 	#print("theta11 dim: " + str(theta11.shape))
 	#print("theta21 dim: " + str(theta21.shape))
@@ -413,7 +406,7 @@ def ikine(T06, thP):
 		print("A value in theta22 is nan!")
 		theta22 = [thP[0,0], thP[0,0]]
 	'''
-	print("thP is: " + str(thP))
+	#print("thP is: " + str(thP))
 	if np.any(np.isnan(theta11)):
 		theta11 = np.array([[thP[0], thP[0]]])
 		theta21 = np.array([[theta21[0], theta21[1]]])
@@ -429,11 +422,11 @@ def ikine(T06, thP):
 
 	#print(thIK[0, 0:4])
 
-	print("After setting theta11, theta21, theta12, theta22:") 
-	print("theta11: " + str(theta11))
-	print("theta21: " + str(theta21))
-	print("theta12: " + str(theta12))
-	print("theta22: " + str(theta22))
+	#print("After setting theta11, theta21, theta12, theta22:") 
+	#print("theta11: " + str(theta11))
+	#print("theta21: " + str(theta21))
+	#print("theta12: " + str(theta12))
+	#print("theta22: " + str(theta22))
 
 	# ALL TESTS PASSED TO THIS POINT
 		
@@ -445,9 +438,9 @@ def ikine(T06, thP):
 	thIK[1, 0:4] = [theta21[0,0], theta21[0,1], theta21[0,0], theta21[0,1]]
 	thIK[1, 4:8] = [theta22[0,0], theta22[0,1], theta22[0,0], theta22[0,1]]	 
 
-	print("After setting the solutions for shoulder right and shoulder left")
-	print("thIK is: ") 
-	print(thIK)
+	#print("After setting the solutions for shoulder right and shoulder left")
+	#print("thIK is: ") 
+	#print(thIK)
 
 	# ALL TESTS PASSED TO THIS POINT
 
@@ -480,11 +473,11 @@ def ikine(T06, thP):
 		# ALL TESTS PASSED TO THIS POINT
 
 		t03Rot = T03[0:3, 0:3].T
-		print("t03Rot:")
-		print(t03Rot)
+		#print("t03Rot:")
+		#print(t03Rot)
 		thirdRow = -T03[0:3, 0:3].T*T03[0:3, 3]
-		print("thirdRow:")
-		print(thirdRow)
+		#print("thirdRow:")
+		#print(thirdRow)
 	
 
 
@@ -496,7 +489,7 @@ def ikine(T06, thP):
 							  thirdRow[2,0]], \
 							 [0, 0, 0, 1] ]) * T06
 	
-		print("Twrist: " + str(Twrist))
+		#print("Twrist: " + str(Twrist))
 
 		# Remove first 3 joint angles to isolate joints 4, 5, 6 angles:
 		thIK[3,z] = math.atan2(-Twrist[1,2], -Twrist[0,2])
@@ -512,7 +505,7 @@ def ikine(T06, thP):
 		#print("Final Twrist:")
 		#print(Twrist)
 
-	print("After solving for joints 4, 5, 6, thIK is: ")
+	#print("After solving for joints 4, 5, 6, thIK is: ")
 	print(thIK) 
 
 	# ALL TESTS PASS TO THIS POINT
@@ -524,7 +517,7 @@ def ikine(T06, thP):
 	for x in range(8):
 		# Check the joint limits:
 
-		print("thIK[0:6, x] is: " + str(thIK[0:6, x]))
+		#print("thIK[0:6, x] is: " + str(thIK[0:6, x]))
 
 		# The number of joints that are within joint limits:
 		absTHIK = np.abs(thIK[0:6, x])  
@@ -544,49 +537,64 @@ def ikine(T06, thP):
 			#tempOut[0:7, counter] = thIK[0:7, x]
 			#counter += 1
 
-	print("tempOut: ")
-	print(tempOut)
-
+	#print("tempOut: ")
+	#print(tempOut)
+	print("STEP 1")
 	tempOutLim = tempOut[0:7, 0:counter]
 
-	print("tempOutLim.shape[0]: " + str(tempOutLim.shape[0]))
-	print("tempOutLim.shape[1]: " + str(tempOutLim.shape[1]))
+	#print("tempOutLim.shape[0]: " + str(tempOutLim.shape[0]))
+	#print("tempOutLim.shape[1]: " + str(tempOutLim.shape[1]))
 	if tempOutLim.shape[1] != 0:
 
-		print("tempOutLim is: ")
-		print(tempOutLim)
+		#print("tempOutLim is: ")
+		#print(tempOutLim)
 
 		# ALL TESTS PASS TO THIS POINT
 
-		print("np.abs(thP) is: " + str(np.abs(thP)))
+		#print("np.abs(thP) is: " + str(np.abs(thP)))
 
-		if max(np.abs(thP)) > 0:
-			print("In Conditional if")
-			minDiff = np.zeros([counter, 1])
-			for x in range(counter):
-				minDiff[x] = np.linalg.norm(tempOutLim[0:6, x].T - thP)
+		#if max(np.abs(thP)) > 0:
+		minDiff = np.zeros([counter, 1])	
+		for x in range(counter):
+			minDiff[x] = np.linalg.norm(tempOutLim[0:6, x].T - thP)
+		#print("minDiff:" + str(minDiff))
+		smallestIndex = 9001
+		if minDiff.item(0, 0) < minDiff.item(1, 0):
+			smallestIndex = 0
+		else:	 
+			smallestIndex = 1	 
+		thOut = []	 
+		for i in range(7): 
+			thOut.append(tempOutLim.item(i, smallestIndex))	 
+		return thOut	 	  
+			#minDiff = np.zeros([counter, 1])
+			#for x in range(counter):
+				#minDiff[x] = np.linalg.norm(tempOutLim[0:6, x].T - thP)
 
-			print("minDiff:" + str(minDiff))
+			#print("minDiff:" + str(minDiff))
 
 			# ALL TESTS PASS TO THIS POINT
 		
 			# Find the closest solution:
-			smallestIndex = 9001
+			#smallestIndex = 9001
 		
-			if minDiff.item(0, 0) < minDiff.item(1, 0):
-				smallestIndex = 0
-			else:
-				smallestIndex = 1
+			#if minDiff.item(0, 0) < minDiff.item(1, 0):
+				#smallestIndex = 0
+			#else:
+				#smallestIndex = 1
 
-			print("smallestIndex: " + str(smallestIndex))
-
-		
-			thOut = []
-			for i in range(7):
-				thOut.append(tempOutLim.item(i, smallestIndex))
-			return thOut
-		else:
-			thOut = tempOutLim
-			return thOut
+			#print("smallestIndex: " + str(smallestIndex))
+			#print("STEP 2")		
+			#thOut = []
+			#for i in range(7):
+				#thOut.append(tempOutLim.item(i, smallestIndex))
+			#print("STEP 3")
+			#return thOut
+		#else:
+			#thOut = tempOutLim
+			#print("STEP 4")
+			#print thOut
+			#return thOut
 	else:
+		print("STEP 5")
 		return []

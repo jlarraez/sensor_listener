@@ -1,0 +1,6 @@
+float64 joint1Position
+float64 joint2Position
+float64 joint3Position
+float64 joint4Position 
+float64 joint5Position
+float64 joint6Position

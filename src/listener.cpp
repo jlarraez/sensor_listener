@@ -210,8 +210,9 @@ int main(int argc, char **argv)
       ros::init(argc, argv,"listener");
       ros::NodeHandle n;
       ros::Rate r(1);
-      robo_pub = n.advertise<sensor_msgs::JointState>("joint_leap", 100);
+      robo_pub = n.advertise<sensor_msgs::JointState>("/joint_leap", 100);
       //We have to create the JointState msg
+      /*
       joint_msg_leap.name.resize(9);
       joint_msg_leap.position.resize(9);
       joint_msg_leap.name[0] ="axis1_joint";
@@ -223,6 +224,17 @@ int main(int argc, char **argv)
       joint_msg_leap.name[6] ="right_back_wheel_joint";
       joint_msg_leap.name[7] ="left_front_wheel_joint";
       joint_msg_leap.name[8] ="left_back_wheel_joint";
+      */
+      
+      joint_msg_leap.name.resize(6);
+      joint_msg_leap.position.resize(6);
+      joint_msg_leap.name[0] ="arm_1_joint";
+      joint_msg_leap.name[1] ="arm_2_joint";
+      joint_msg_leap.name[2] ="arm_3_joint";
+      joint_msg_leap.name[3] ="arm_4_joint";
+      joint_msg_leap.name[4] ="arm_5_joint";
+      joint_msg_leap.name[5] ="arm_6_joint";
+     
       //sensor subscription
       ros::Subscriber leapsub = n.subscribe("/leapmotion/data", 1000, leapmotionCallback);
       //ros::Subscriber myogestsub = n.subscribe("/myo_gest", 1000, myogestCallback);

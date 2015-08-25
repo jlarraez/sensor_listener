@@ -12,8 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   tf
-  message_generation
-  geometry_msgs
+  schunk_api
   
 )
 
@@ -51,24 +50,18 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-add_message_files(
-   FILES
-   PositionJointSpace.msg
-   PositionCoordSpaceQuat.msg
-   PositionCoordSpace.msg
-   JointDataPowerball.msg
-   InitHalt.msg
-)
+# add_message_files(
+#   FILES
+#   Message1.msg
+#   Message2.msg
+# )
 
 ## Generate services in the 'srv' folder
-add_service_files(
-   FILES
-   PositionAPIJointSpace.srv
-   PositionAPICoordSpace.srv
-   PositionAPICoordSpaceQuat.srv
-   JointDataAPIPowerball.srv
-   InitHaltAPI.srv
-)
+# add_service_files(
+#   FILES
+#   Service1.srv
+#   Service2.srv
+# )
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -77,11 +70,11 @@ add_service_files(
 #   Action2.action
 # )
 
-generate_messages(
-   DEPENDENCIES
-   std_msgs
-   geometry_msgs
-)
+## Generate added messages and services with any dependencies listed here
+#generate_messages(
+#   DEPENDENCIES
+#   std_msgs
+# )
 
 ###################################
 ## catkin specific configuration ##
@@ -117,7 +110,7 @@ include_directories(
 
 ## Declare a cpp executable
 #add_executable(listener_learning src/listener_learning.cpp)
-add_executable(listener_direct src/listener_direct_bak.cpp)
+add_executable(listener_direct src/listener_direct.cpp)
 #add_executable(listener src/listener.cpp)
 #add_executable(pedal_security src/pedal_security.cpp)
 
@@ -155,11 +148,6 @@ add_executable(listener_direct src/listener_direct_bak.cpp)
  install(PROGRAMS
    src/pedal_security.py
    src/kinematic_functions.py
-   src/schunk_api_node.py
-   src/powerball_constants.py 
-   src/kinematic_functions.py
-   src/schunk_api_test_coord.py
-   src/schunk_api_test.py
    DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
  )
 
