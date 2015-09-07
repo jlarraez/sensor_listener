@@ -14,6 +14,7 @@
 #include <iostream>
 #include <sensor_msgs/JointState.h>
 #include <tf/transform_broadcaster.h>
+#include <tf/transform_datatypes.h>
 //Planning Tutorial
 #include <moveit/move_group_interface/move_group.h>
 #include <moveit/planning_scene_interface/planning_scene_interface.h>
@@ -55,6 +56,7 @@
 //Allow to use Pythons scripts
 #include </usr/include/python2.7/Python.h>
 #include <numpy/arrayobject.h>
+#include <math.h>
 //In order to work export PYTHONPATH="${PYTHONPATH}:/home/jorgearraez/catkin_ws/src/sensor_listener/src and create __init__.py in that directory"
 
 //#include <tf/transform_datatypes.h>
@@ -67,7 +69,7 @@ std_msgs::UInt8 myogest_;
 
 geometry_msgs::Pose target_pose1;
 //Callback pose
-geometry_msgs::PoseStamped old_pose;
+geometry_msgs::Pose old_pose;
 //waypoints
 geometry_msgs::Pose pose;
 
@@ -133,6 +135,7 @@ int arm_trajectory_point;
 //waypoints
 std::vector<geometry_msgs::Pose> waypoints;
 
+
 //We declare a vectr of PoseStamp
 std::vector<leap_motion::leapros2> trajectory_hand; 
 leap_motion::leapros2 TrajectoryPoint;
@@ -171,6 +174,7 @@ private:
   ros::Publisher *pdisplay_publisher;
   ros::Subscriber *pdisplay_subscriber;
   ros::ServiceClient *pclient;
+  tf::Quaternion q;
 
   
 public:
@@ -206,7 +210,7 @@ public:
   void LeapMotionListener::leapmotionCallback(const leap_motion::leapros2::ConstPtr& dataHand)
 {
       dataHand_=(*dataHand);
-      ROS_INFO("INSIDE CALLBACK");
+      //ROS_INFO("INSIDE CALLBACK");
       if (FIRST_VALUE)
         {
         dataLastHand_.palmpos.x=dataHand_.palmpos.x;
@@ -229,7 +233,22 @@ public:
         if ((dataHand_.palmpos.x<Downdifferencex)||(dataHand_.palmpos.x>Updifferencex)||(dataHand_.palmpos.y<Downdifferencey)||(dataHand_.palmpos.y>Updifferencey)||(dataHand_.palmpos.z<Downdifferencez)||(dataHand_.palmpos.z>Updifferencez))
           {
             //ROS_INFO("TRYING TO ADD POINT %d TO TRAJECTORY",arm_trajectory_point);
-            pose.orientation.w = 1.0;
+            //q.setRPY(dataHand_.ypr.z,dataHand_.ypr.y,dataHand_.ypr.x);
+            q.setRPY(0,0,M_PI/2);
+            //pose.orientation.x = q.getAxis().getZ();
+            //pose.orientation.y = q.getAxis().getY();
+            //pose.orientation.z = q.getAxis().getX();
+            //pose.orientation.w = q.getW();
+            pose.orientation.x = q.getAxis().getZ();//cambiado aposta
+            pose.orientation.y = q.getAxis().getY();
+            pose.orientation.z = q.getAxis().getX();//cambiado aposta
+            pose.orientation.w = q.getW();
+            //pose.orientation.w = ;
+            //pose.orientation.z=1;
+            //pose.orientation.y=0;
+            //pose.orientation.x=0;
+            //We need to send the correct axis to the robot. Currently they are rotated and x is z
+            //ROS_INFO("VALUES OF THE QUATERNION SET TO \n X: %f\n  Y: %f\n Z: %f W: %f\n",pose.orientation.x,pose.orientation.y,pose.orientation.z,pose.orientation.w);
             pose.position.y +=(dataHand_.palmpos.x-dataLastHand_.palmpos.x) ;
             pose.position.z +=(dataHand_.palmpos.y-dataLastHand_.palmpos.y);
             if(pose.position.z>Uplimitez)
@@ -244,16 +263,18 @@ public:
               dataLastHand_.palmpos.y=dataHand_.palmpos.y;
               dataLastHand_.palmpos.z=dataHand_.palmpos.z;
               // Both limits for x,y,z to avoid small changes
-              Updifferencex=dataLastHand_.palmpos.x+10;
+              Updifferencex=dataLastHand_.palmpos.x+10;//
               Downdifferencex=dataLastHand_.palmpos.x-10;
               Updifferencez=dataLastHand_.palmpos.z+10;
               Downdifferencez=dataLastHand_.palmpos.z-20;
               Updifferencey=dataLastHand_.palmpos.y+20;
               Downdifferencey=dataLastHand_.palmpos.y-20;
+              old_pose=pose;
             }
             else
             {
-              ROS_ERROR("Failed to call service ");
+              ROS_ERROR("Position out of range");
+              pose=old_pose;
             }
 
           }
@@ -330,8 +351,13 @@ int main(int argc, char *argv[])
       
       pose.position.x = 0;
       pose.position.y = 0;
-      pose.position.z = 859.9;
-          
+      //Real Position
+      pose.position.z = 375;
+      
+      old_pose=pose;
+      //Simulation position
+      //pose.position.z = 859.9;
+              
       CAPTURE_MOVEMENT=false;//know when you have reach the maximum of points to handle
       //Creating the joint_msg_leap
       joint_msg_leap.name.resize(8);
@@ -351,9 +377,7 @@ int main(int argc, char *argv[])
 
       //ROS DECLARATION
       ros::init(argc, argv,"listener");
-      
 
-      //sensor_listener::InitHaltAPI srv2;
       if (argc != 2)
       {
         ROS_WARN("WARNING: you should specify number of points to capture");
@@ -370,6 +394,8 @@ int main(int argc, char *argv[])
       
       //ros::NodeHandle node_handle;
       ros::NodeHandle node_handle("~");
+      ros::ServiceClient clientinit = node_handle.serviceClient<sensor_listener::InitHaltAPI>("/InitHaltAPI");
+      sensor_listener::InitHaltAPI srvinit;
       // start a ROS spinning thread
       ros::AsyncSpinner spinner(1);
       //spinner.start();
@@ -384,14 +410,20 @@ int main(int argc, char *argv[])
       ROS_INFO("PRESH LEFT PEDAL TO START");
       while((s=getchar())!= '1')      
         ROS_INFO("PRESH LEFT PEDAL TO START");
+      srvinit.request.command=command;
+      
+      if (clientinit.call(srvinit))
+      {
+      ROS_INFO("Init correct"); 
       /* SENSOR SUBSCRIBING */
       //LEAP MOTION
+      
       ROS_INFO("SUBSCRIBING LEAPMOTION");
       ros::Subscriber leapsub = node_handle.subscribe("/leapmotion/data", 1000, &LeapMotionListener::leapmotionCallback, &leapmotionlistener);
       ros::ServiceClient client = node_handle.serviceClient<sensor_listener::PositionAPICoordSpaceQuat>("/PositionAPICoordSpaceQuat");
       pointerto_client=&client;
       leapmotionlistener.setPointertoClient(pointerto_client);
-      //ros::ServiceClient client2 = node_handle.serviceClient<sensor_listener::InitHaltAPI>("/InitHaltAPI");
+
       while(!CAPTURE_MOVEMENT==true)
       {
        
@@ -402,6 +434,11 @@ int main(int argc, char *argv[])
       ROS_INFO("CAPTURING POINTS FINISH");
       // End of Capturing Stage
       return 0;
+      }
+      else
+      {
+        ROS_INFO("Could not init");
+      }
 }
 
 

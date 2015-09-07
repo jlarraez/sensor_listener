@@ -307,12 +307,14 @@ def ikine(T06, thP):
 	# This list holds the joint limits of the Powerball in radians:
 	thLimits = [JOINT_1_MAX, JOINT_2_MAX, JOINT_3_MAX, JOINT_4_MAX, JOINT_5_MAX, JOINT_6_MAX]	 
 
-	# Denavit-Hartenberg Parameters for the Powerball:
-	d1 = 205
+	# Denavit-Hartenberg Parameters for the Powerball: d1 with the normal platform 205. In our simulation joint_0 is over the robotfoot
+	d1 = 205 
+	#d1 = 89.7
 	a2 = 350
 	d4 = 305
 	# with Gripper d6 = 300
-	d6 = 75
+	d6 = 300
+	#d6 = 75
 	# Solve for theta 3 (Joint 3 angle): 	 
 
 	# Vector from the spherical wrist to the tooltip:
@@ -329,11 +331,11 @@ def ikine(T06, thP):
 	#print("dElbow is: " + str(dElbow)) # TEST PASSED 2/6/15 - 2:29 PM
 
 	dElbowNorm = np.linalg.norm(dElbow)	
-	print("dElbowNorm is: " + str(dElbowNorm)) # TEST PASSED 2/6/15 - 2:33 PM
+	#print("dElbowNorm is: " + str(dElbowNorm)) # TEST PASSED 2/6/15 - 2:33 PM
 
 	# Angle of Elbow (found by Law of Cosines)
 	temp = math.pi - math.acos( ( (a2**2)+(d4**2)-(dElbowNorm**2))/(2*a2*d4))
-	print("temp is: " + str(temp)) # TEST PASSED 2/6/15 - 2:33 PM
+	#print("temp is: " + str(temp)) # TEST PASSED 2/6/15 - 2:33 PM
 
 	# 8 Solutions - first 4 rows are for elbow up; bottom 4 are elbow down:
 	thIK[2][0] = thIK[2][1] = thIK[2][2] = thIK[2][3] = temp

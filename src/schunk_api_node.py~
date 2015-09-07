@@ -31,14 +31,15 @@ from sensor_msgs.msg import JointState
 
 # Custom ROS Messages:
 from sensor_listener.srv import *
+from std_srvs.srv import Trigger
 
 # Fraunhofer Libraries:
 from cob_sound.msg import *
 from cob_script_server.msg import *
-from cob_srvs.srv import *
+#from cob_srvs.srv import *
 
-# Manifests to load:
-roslib.load_manifest('cob_script_server')
+# Manifests to load not more needed in catkin
+#roslib.load_manifest('cob_script_server')
 
 # Custom Kinematic Libraries:
 import kinematic_functions as kf
@@ -72,7 +73,7 @@ def position_api_joint_space_handler(req):
 
 	# Form a list of the target joint angles:
 	targetJointAngles = [req.joint1, req.joint2, req.joint3, req.joint4, req.joint5, req.joint6]
-
+	rospy.loginfo("Joint Angle saved")
 	'''
     Encapsulate the target jointangles into another list (this forms a trajectory)
 	'''
@@ -94,19 +95,22 @@ def position_api_joint_space_handler(req):
 		traj_msg.points.append(point_msg)
 
 	# Send the position control message to the action server node:
-	action_server_name = '/arm_controller/follow_joint_trajectory'
+	action_server_name = '/arm/joint_trajectory_controller/follow_joint_trajectory'
+	rospy.loginfo("Trajectory created")
 
 	client = actionlib.SimpleActionClient(action_server_name, FollowJointTrajectoryAction)
 	if not client.wait_for_server(rospy.Duration(5)):
 		print("Action server not ready within timeout.  Aborting...")
 		ah.set_failed(4)
-		return ah
+		#return ah
+		return 2
 	else:
 		print("Action server ready!")
-
+	rospy.loginfo("Creating message")
 	client_goal = FollowJointTrajectoryGoal()
 	client_goal.trajectory = traj_msg
 	client.send_goal(client_goal)
+	rospy.loginfo("Sending message to client")
 	ah.set_client(client)
 
 	ah.wait_inside()
@@ -193,19 +197,20 @@ def position_api_coord_space_handler(req):
 	jointStateCallbackEx = False
 
 	# We need to convert the quaternion into a 4x4 homogeneous transformation matrix:
-	homoMat = quaternion_matrix(targetRot) 
+	homoMat = quaternion_matrix(targetRot)
+  
 	
 	# Insert the desired target joint coordinate into the transformation matrix:
 	homoMat[0,3] = req.xCoord
 	homoMat[1,3] = req.yCoord
-	homoMat[2,3] = req.zCoord    
+	homoMat[2,3] = req.zCoord
 
 	'''
 	Calculate the inverse kinematics given the target rotation/position and
 	the list of current joint angles:
 	'''
 	print(homoMat)
-	print(jointAngles)
+	#print(jointAngles)
 	targetJointAngles = kf.ikine(homoMat, jointAngles)
 	print("targetJointAngles")
 	if len(targetJointAngles) != 0:
@@ -232,10 +237,10 @@ def position_api_coord_space_handler(req):
 			traj_msg.points.append(point_msg)
 
 		# Send the position control message to the action server node:
-		action_server_name = '/arm_controller/follow_joint_trajectory'
+		action_server_name = '/arm/joint_trajectory_controller/follow_joint_trajectory'
 		
 		client = actionlib.SimpleActionClient(action_server_name, FollowJointTrajectoryAction)
-		if not client.wait_for_server(rospy.Duration(5)):
+		if not client.wait_for_server():
 			print("Action server not ready within timeout.  Aborting...")
 			ah.set_failed(4)
 			return ah
@@ -246,7 +251,7 @@ def position_api_coord_space_handler(req):
 		client_goal.trajectory = traj_msg
 		client.send_goal(client_goal)
 		ah.set_client(client)
-
+		client.wait_for_result(rospy.Duration.from_sec(5.0))
 		ah.wait_inside()
 	return 0
 
@@ -304,24 +309,29 @@ def position_api_coord_space_quat_handler(req):
 	
 	# Insert the desired target joint coordinate into the transformation matrix:
 	homoMat[0,0] = 1
-	homoMat[0,1] = 0
-	homoMat[0,2] = 0
 	homoMat[1,0] = 0
-	homoMat[1,1] = 1
-	homoMat[1,2] = 0
 	homoMat[2,0] = 0
+	homoMat[0,1] = 0
+	homoMat[1,1] = -1
 	homoMat[2,1] = 0
-	homoMat[2,2] = 1
+	homoMat[0,2] = 0
+	homoMat[1,2] = 0
+	homoMat[2,2] = -1
 	homoMat[0,3] = req.target.position.x
 	homoMat[1,3] = req.target.position.y
 	homoMat[2,3] = req.target.position.z
-	#print(homoMat)
+	#RotxMat=numpy.array([[1,0,0,0],[0,0,1,0],[0,-1,0,0],[0,0,0,1]]) 
+	#RotyMat=numpy.array([[0,0,-1,0],[0,1,0,0],[1,0,0,0],[0,0,0,1]])
+	#SolMat=numpy.array([[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]])
+	#SolMat=RotyMat*RotxMat*homoMat
 	'''
 	Calculate the inverse kinematics given the target rotation/position and
 	the list of current joint angles:
 	'''
+	print("homoMat is:  ")
 	print(homoMat)
-	print(jointAngles)
+	#print(SolMat)
+	#print(jointAngles)
 	try:
 		targetJointAngles = kf.ikine(homoMat, jointAngles)
 	except ValueError:
@@ -329,45 +339,42 @@ def position_api_coord_space_quat_handler(req):
 		return 0		
 	if len(targetJointAngles) != 0:
 		# We have a valid solution!  Move the Powerball to this location: 
-		#targetJointAngles = targetJointAngles.flatten()
-		print(targetJointAngles)		
+		# Code for Simulation 
+		#print(targetJointAngles)		
 		# Encapsulate the targetJointAngles into a trajectory:
-		traj = []
-		#traj = numpy.array(targetJointAngles[0][0:6]).tolist()
-		#print(targetJointAngles[0][0])
-		#print(targetJointAngles[1][0])
-		joint1=targetJointAngles[0]
-		joint1=targetJointAngles[0]
-		joint2=targetJointAngles[1]
-		joint3=targetJointAngles[2]
-		joint4=targetJointAngles[3]
-		joint5=targetJointAngles[4]
-		joint6=targetJointAngles[5]
-		#traj.append(targetJointAngles[0][0])
-		#traj.append(targetJointAngles[1][0])
-		#traj.append(targetJointAngles[2][0])
-		#traj.append(targetJointAngles[3][0])
-		#traj.append(targetJointAngles[4][0])
-		#traj.append(targetJointAngles[5][0])
-		traj.append(joint1)
-		traj.append(joint2)
-		traj.append(joint3)
-		traj.append(joint4)
-		traj.append(joint5)
-		traj.append(joint6)
-		print(traj)		
-		#traj = [float(targetJointAngles[0,0]),(targetJointAngles[1,0]),(targetJointAngles[2,0]),(targetJointAngles[3,0]),(targetJointAngles[4,0]),(targetJointAngles[5,0])]
-		#print(targetJointAngles)    
+		#traj = []
+		#joint1=targetJointAngles[0]
+		#joint1=targetJointAngles[0]
+		#joint2=targetJointAngles[1]
+		#joint3=targetJointAngles[2]
+		#joint4=targetJointAngles[3]
+		#joint5=targetJointAngles[4]
+		#joint6=targetJointAngles[5]
+		#traj.append(joint1)
+		#traj.append(joint2)
+		#traj.append(joint3)
+		#traj.append(joint4)
+		#traj.append(joint5)
+		#traj.append(joint6)
+		#print(traj)
+		#position = []		 
 		# Generate the trajectory message to send to the Powerball:
+		# End code simulation
+
+		targetJointAngles = targetJointAngles[:6]
+
+		# Encapsulate the targetJointAngles into a trajectory:
+		traj = [targetJointAngles] 
 		traj_msg = JointTrajectory()
 		traj_msg.header.stamp = rospy.Time.now() + rospy.Duration(0.5)
 		traj_msg.joint_names = ['arm_1_joint', 'arm_2_joint', 'arm_3_joint', 'arm_4_joint', 'arm_5_joint', 'arm_6_joint']
 		point_nr = 0
-		position = []
+
 		# Set the target velocities of the target joints.  They are set to 0 to denote stopping at the destinations:
 		for point in traj:	
 			#print(point)	
-			position.append((point))
+			#Position only in simulation
+			#position.append((point))
 			point_nr += 1
 			point_msg = JointTrajectoryPoint()
 			point_msg.positions = point
@@ -375,9 +382,9 @@ def position_api_coord_space_quat_handler(req):
 			point_msg.time_from_start = rospy.Duration(3 * point_nr)
 			traj_msg.points.append(point_msg)
 		# Send the position control message to the action server node:
-		position.append(-0.02885) 
-		position.append(0.02885)
-		obj1.position=position
+		#position.append(-0.02885) 
+		#position.append(0.02885)
+		#obj1.position=position
 		#print(obj1.position[0])
 		#print(obj1.position[1])
 		#print(obj1.position[2])
@@ -386,20 +393,21 @@ def position_api_coord_space_quat_handler(req):
 		#print(obj1.position[5])
 		#print(obj1.position[6])
 		#print(obj1.position[7])
-		action_server_name = '/arm_controller/follow_joint_trajectory'
-		pub.publish(obj1)
-		#client = actionlib.SimpleActionClient(action_server_name, FollowJointTrajectoryAction)
-		#if not client.wait_for_server(rospy.Duration(5)):
-		#	print("Action server not ready within timeout.  Aborting...")
-		#	ah.set_failed(4)
-		#	return ah
-		#else:
-		#	print("Action server ready for Coordinate API Request")
+		action_server_name = '/arm/joint_trajectory_controller/follow_joint_trajectory'
+		#pub.publish(obj1)
+		client = actionlib.SimpleActionClient(action_server_name, FollowJointTrajectoryAction)
+		if not client.wait_for_server(rospy.Duration(5)):
+			print("Action server not ready within timeout.  Aborting...")
+			ah.set_failed(4)
+			#return ah
+			return 0
+		else:
+			print("Action server ready for Coordinate API Request")
 		
-		#client_goal = FollowJointTrajectoryGoal()
-		#client_goal.trajectory = traj_msg
-		#client.send_goal(client_goal)
-		#ah.set_client(client)
+		client_goal = FollowJointTrajectoryGoal()
+		client_goal.trajectory = traj_msg
+		client.send_goal(client_goal)
+		ah.set_client(client)
 
 		#ah.wait_inside()
 		return 1
@@ -410,33 +418,33 @@ This handler allows a user to initialize, halt, and emergency stop the Powerball
 '''
 def init_halt_api_handler(req):
 	rospy.loginfo("Inside  HaltAPI Service call!")	
+	
 	# Acquire the requested action (a string):
-#	userCmd = req.command
+	userCmd = req.command
 
 	# What command is it?
-#	if userCmd == 'init':
-	#if userCmd == '1':		
-	#	rospy.wait_for_service('/arm_controller/init')
-	#	try:
-	#		initRobot = rospy.ServiceProxy('/arm_controller/init', Trigger)
-	#		resp = initRobot()
+	if userCmd == 'init':
+		rospy.loginfo("Inside  init!")
+		rospy.wait_for_service('/arm/driver/init')
+		try:
+			initRobot = rospy.ServiceProxy('/arm/driver/init',Trigger)
+			resp = initRobot()
 
-	#		print("resp.success.data is: " + str(resp.success.data))
+			print("resp.success.data is: " + str(resp.success))
 
 			# If initialization fails, try again:
-		#	while resp.success.data != True:
-		#		resp = initRobot()
+			while resp.success != True:
+				resp = initRobot()
 			
-		#	return 0
-	#	except rospy.ServiceException, e:
-	'''		print("Service call failed when initializing robot: %s" % e)
+			return 1
+		except rospy.ServiceException, e:
+			print("Service call failed when initializing robot: %s" % e)
+			return 0
 	elif userCmd == 'halt':
-	#elif userCmd == '2':
 		rospy.wait_for_service('/arm_controller/halt')
 		try:
 			haltRobot = rospy.ServiceProxy('/arm_controller/halt', Trigger)
 			resp = haltRobot()
-			print("Stop the robot")
 			return 0
 		except rospy.ServiceException, e:
 			print("Service call failed when calling robot halt: %s" % e)
@@ -446,11 +454,10 @@ def init_halt_api_handler(req):
 		try:
 			estopRobot = rospy.ServiceProxy('/arm_controller/stop', Trigger)
 			resp = estopRobot()
-			print("Emergency stop the robot")
 			return 0
 		except rospy.ServiceException, e:
-			print("Service call failed when calling robot emergency stop; %s" % e)'''
-	return 0
+			print("Service call failed when calling robot emergency stop; %s" % e)
+
 def api_server():
 
 	# Initialize the API Server node:

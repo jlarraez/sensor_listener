@@ -83,7 +83,7 @@
   </link>
   <!-- arm -->
   <joint name="arm_0_joint" type="fixed">
-    <origin rpy="0 0 0" xyz="0 0 0.14"/>
+    <origin rpy="3.1415926 0 0" xyz="0 0 0.5"/>
     <parent link="base_link"/>
     <child link="arm_0_link"/>
   </joint>
@@ -108,7 +108,7 @@
     </collision>
   </link>
   <joint name="arm_1_joint" type="revolute">
-    <origin rpy="0 0 0" xyz="0 0 0.0897"/>
+    <origin rpy="0 0 0" xyz="0 0 -0.0897"/>
     <parent link="arm_0_link"/>
     <child link="arm_1_link"/>
     <axis xyz="0 0 -1"/>
@@ -139,7 +139,7 @@
     </collision>
   </link>
   <joint name="arm_2_joint" type="revolute">
-    <origin rpy="-1.5708 0 3.14159" xyz="0 0 0"/>
+    <origin rpy="1.5708 0 0" xyz="0 0 0"/>
     <parent link="arm_1_link"/>
     <child link="arm_2_link"/>
     <axis xyz="0 0 -1"/>

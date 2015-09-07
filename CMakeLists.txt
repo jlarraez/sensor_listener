@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   tf
   message_generation
   geometry_msgs
+  std_srvs
   
 )
 
@@ -117,7 +118,7 @@ include_directories(
 
 ## Declare a cpp executable
 #add_executable(listener_learning src/listener_learning.cpp)
-add_executable(listener_direct src/listener_direct_bak.cpp)
+add_executable(listener_direct src/listener_direct.cpp)
 #add_executable(listener src/listener.cpp)
 #add_executable(pedal_security src/pedal_security.cpp)
 
@@ -156,6 +157,7 @@ add_executable(listener_direct src/listener_direct_bak.cpp)
    src/pedal_security.py
    src/kinematic_functions.py
    src/schunk_api_node.py
+   src/test.py
    src/powerball_constants.py 
    src/kinematic_functions.py
    src/schunk_api_test_coord.py
