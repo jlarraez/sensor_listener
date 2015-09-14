@@ -276,6 +276,7 @@ int main(int argc, char **argv)
       
       collision_detection::CollisionRequest collision_request;
       collision_detection::CollisionResult collision_result;
+      moveit_msgs::DisplayTrajectory display_trajectory;
       
       /*Finish Variables Initialitation*/
 
@@ -322,7 +323,7 @@ int main(int argc, char **argv)
 
 
       /* Sleep a little to allow time to startup rviz, etc. */
-      ros::WallDuration sleep_time(20.0);
+      ros::WallDuration sleep_time(15.0);
       sleep_time.sleep();  
       /*end of MOVEIT Setup*/
 
@@ -338,8 +339,8 @@ int main(int argc, char **argv)
       ROS_INFO("Planning to INITIAL POSE");
       
       geometry_msgs::Pose pose;
-      pose.position.x = 0.1;
-      pose.position.y = 0.1;
+      pose.position.x = 0.2;
+      pose.position.y = 0.2;
       pose.position.z = 1.15;
       pose.orientation.w = 1.0;
       //std::vector<double> tolerance_pose(3, 0.01);
@@ -352,46 +353,26 @@ int main(int argc, char **argv)
       // Visualize the result
       // ^^^^^^^^^^^^^^^^^^^^
       /* Visualize the trajectory */
-      moveit_msgs::DisplayTrajectory display_trajectory;
+      if (1)
+      {
+      
       display_trajectory.trajectory_start = my_plan.start_state_;
       display_trajectory.trajectory.push_back(my_plan.trajectory_);
       display_publisher.publish(display_trajectory);
-      //sleep_time.sleep();
+      sleep(5.0);
+      }
       /* End Planning to a Pose goal 1*/
 
      // First, set the state in the planning scene to the final state of the last plan 
      
       robot_state::RobotState start_state(*group.getCurrentState());
-      joint_model_group = start_state.getJointModelGroup("arm");
-      start_state.setJointGroupPositions(joint_model_group, my_plan.trajectory_.joint_trajectory.points.back().positions);
-      group.setStartState(start_state);
+      //joint_model_group = start_state.getJointModelGroup("arm");
+      //start_state.setJointGroupPositions(joint_model_group, my_plan.trajectory_.joint_trajectory.points.back().positions);
+      //group.setStartState(start_state);
       //my_plan.start_state_=start_state;
-      spinner.stop();
+      //spinner.stop();
       
-      /*Capturing Stage*/
-      /*****************/
-      ROS_INFO("PRESH ENTER TO START CAPTURING POINTS");
-      while (getline(std::cin,s))
-      {
-        if ('\n' == getchar())
-          break;
-      }
-      
-      /* SENSOR SUBSCRIBING */
-      //LEAP MOTION
-      ROS_INFO("SUBSCRIBING LEAPMOTION");
-      ros::Subscriber leapsub = node_handle.subscribe("/leapmotion/data", 1000, &LeapMotionListener::leapmotionCallback, &leapmotionlistener);
-      ros::Subscriber trajectorysub = node_handle.subscribe("/move_group/", 1000, &LeapMotionListener::leapmotionCallback, &leapmotionlistener);
-      while(!CAPTURE_MOVEMENT==true)
-      {
-       
-       ros::spinOnce();
-       
-      }
-      leapsub.shutdown();
-      ROS_INFO("CAPTURING POINTS FINISH...PROCESSING POINTS");
-      // End of Capturing Stage
-      
+
       /* Adding/Removing Objects and Attaching/Detaching Objects*/
       ROS_INFO("CREATING PLANNING_SCENE PUBLISHER");
       ros::Publisher planning_scene_diff_publisher = node_handle.advertise<moveit_msgs::PlanningScene>("/planning_scene", 1);
@@ -400,7 +381,7 @@ int main(int argc, char **argv)
         ros::WallDuration sleep_t(0.5);
         sleep_t.sleep();
       }
-      ROS_INFO("CREATING COLLISIO NOBJECT");
+      ROS_INFO("CREATING COLLISION OBJECT");
       
       moveit_msgs::CollisionObject collision_object;
       collision_object.header.frame_id = group.getPlanningFrame();
@@ -419,8 +400,8 @@ int main(int argc, char **argv)
       /* A pose for the box (specified relative to frame_id) */
       geometry_msgs::Pose box_pose;
       box_pose.orientation.w = 1.0;
-      box_pose.position.x =  0;
-      box_pose.position.y = -0.6;
+      box_pose.position.x =  -0.2;
+      box_pose.position.y =  0.2;
       box_pose.position.z =  1.2;
 
       collision_object.primitives.push_back(primitive);
@@ -437,92 +418,37 @@ int main(int argc, char **argv)
       planning_scene_msg.world.collision_objects.push_back(collision_object);
       planning_scene_msg.is_diff = true;
       planning_scene_diff_publisher.publish(planning_scene_msg);
-      sleep_time.sleep();
+      //sleep_time.sleep();
       
+      // Planning to a Pose goal 2 with the object
+      // ^^^^^^^^^^^^^^^^^^^^^^^
+      // We can plan a motion for this group to a desired pose for the 
+      // end-effector  
+      ROS_INFO("Planning to INITIAL POSE");
+      group.setPlanningTime(10.0);
+      group.setStartState(*group.getCurrentState());
+      geometry_msgs::Pose pose2;
+      pose2.position.x = 0.2;
+      pose2.position.y = 0.2;
+      pose2.position.z = 1.15;
+      pose2.orientation.w = 1.0;
+      //std::vector<double> tolerance_pose(3, 0.01);
+      //std::vector<double> tolerance_angle(3, 0.01);
+      //old_pose=pose;
+      group.setPoseTarget(pose2);
+       success = group.plan(my_plan);
+      ROS_INFO("Visualizing plan 2 collision test %s",success?"":"FAILED");
 
-      /* Start Creating Arm Trajectory*/
-      /**********************************/
+      // Visualize the result
+      // ^^^^^^^^^^^^^^^^^^^^
+      /* Visualize the trajectory */
+      /*
+      display_trajectory.trajectory_start = my_plan.start_state_;
+      display_trajectory.trajectory.push_back(my_plan.trajectory_);
+      display_publisher.publish(display_trajectory);
+      */
       
-      ROS_INFO("START CREATING ARM TRAJECTORY");
-      for (unsigned i=0; i<trajectory_hand.size(); i++)
-      {
-        //First we set the initial Position of the Hand
-        if (FIRST_VALUE)
-        {
-        dataLastHand_.palmpos.x=trajectory_hand.at(i).palmpos.x;
-        dataLastHand_.palmpos.y=trajectory_hand.at(i).palmpos.y;
-        dataLastHand_.palmpos.z=trajectory_hand.at(i).palmpos.z;
-        FIRST_VALUE=0;
-        ROS_INFO("ORIGINAL POSITION OF THE HAND SET TO \n X: %f\n  Y: %f\n Z: %f\n ",trajectory_hand.at(i).palmpos.x,trajectory_hand.at(i).palmpos.y,trajectory_hand.at(i).palmpos.z);
-        sleep(2);
-        }
-        else
-        {
-        // Both limits for x,y,z to avoid small changes
-        Updifferencex=dataLastHand_.palmpos.x+10;
-        Downdifferencex=dataLastHand_.palmpos.x-10;
-        Updifferencez=dataLastHand_.palmpos.z+10;
-        Downdifferencez=dataLastHand_.palmpos.z-20;
-        Updifferencey=dataLastHand_.palmpos.y+20;
-        Downdifferencey=dataLastHand_.palmpos.y-20;
-        if ((trajectory_hand.at(i).palmpos.x<Downdifferencex)||(trajectory_hand.at(i).palmpos.x>Updifferencex)||(trajectory_hand.at(i).palmpos.y<Downdifferencey)||(trajectory_hand.at(i).palmpos.y>Updifferencey)||(trajectory_hand.at(i).palmpos.z<Downdifferencez)||(trajectory_hand.at(i).palmpos.z>Updifferencez))
-          {
-            
-            ros::AsyncSpinner spinner(1);
-            spinner.start();
-            ROS_INFO("TRYING TO ADD POINT %d TO TRAJECTORY",arm_trajectory_point);
-            // Cartesian Paths
-            // ^^^^^^^^^^^^^^^
-            // You can plan a cartesian path directly by specifying a list of waypoints
-            // for the end-effector to go through. Note that we are starting
-            // from the new start state above. The initial pose (start state) does not
-            // need to be added to the waypoint list.
-            pose.orientation.w = 1.0;
-            pose.position.y +=(trajectory_hand.at(i).palmpos.x-dataLastHand_.palmpos.x)/500 ;
-            pose.position.z +=(trajectory_hand.at(i).palmpos.y-dataLastHand_.palmpos.y)/1000 ;
-            if(pose.position.z>Uplimitez)
-            pose.position.z=Uplimitez;
-            pose.position.x +=-(trajectory_hand.at(i).palmpos.z-dataLastHand_.palmpos.z)/500 ;
-            ROS_INFO("END EFFECTOR POSITION \n X: %f\n  Y: %f\n Z: %f\n", pose.position.x,pose.position.y,pose.position.z);
-            ROS_INFO("Palmpos \n X: %f\n  Y: %f\n Z: %f\n ",trajectory_hand.at(i).palmpos.x,trajectory_hand.at(i).palmpos.y,trajectory_hand.at(i).palmpos.z);
-            //Set the Pose in the group
-            group.setPoseTarget(pose);
-            bool success = group.plan(my_plan);
-            if (success)
-            {
-              ROS_INFO("Visualizing plan");
-              // Visualize the result
-              // ^^^^^^^^^^^^^^^^^^^^
-              /* Visualize the trajectory */
-              moveit_msgs::DisplayTrajectory display_trajectory;
-              display_trajectory.trajectory_start = my_plan.start_state_;
-              display_trajectory.trajectory.push_back(my_plan.trajectory_);
-              display_publisher.publish(display_trajectory);
-              /* End Planning to a new pose*/
-
-             // First, set the state in the planning scene to the final state of the last plan 
-             start_state.setJointGroupPositions(joint_model_group, my_plan.trajectory_.joint_trajectory.points.back().positions);
-             group.setStartState(start_state);
-             //my_plan.start_state_=start_state;
-              
-              old_pose=pose;
-              dataLastHand_.palmpos.x=trajectory_hand.at(i).palmpos.x;
-              dataLastHand_.palmpos.y=trajectory_hand.at(i).palmpos.y;
-              dataLastHand_.palmpos.z=trajectory_hand.at(i).palmpos.z;
-              //sleep(2);
-              
-            }
-            else
-            {
-              ROS_ERROR("Could not compute plan successfully");
-              pose=old_pose;
-            }
-            spinner.stop();
-          }
-          
-        }
-      
-      }  
+        
    //ros::Subscriber myogestsub = n.subscribe("/myo_gest", 1000, myogestCallback);
         
       return 0;

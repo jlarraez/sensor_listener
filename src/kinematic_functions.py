@@ -508,7 +508,7 @@ def ikine(T06, thP):
 		#print(Twrist)
 
 	#print("After solving for joints 4, 5, 6, thIK is: ")
-	print(thIK) 
+	#print(thIK) 
 
 	# ALL TESTS PASS TO THIS POINT
 
@@ -526,8 +526,8 @@ def ikine(T06, thP):
 		numGoodJoints = 0   
 		nextJoint = 0
 		for i in absTHIK:
-			print("i is: " + str(i))
-			print("thLimits[nextJoint] is: " + str(thLimits[nextJoint]))
+			#print("i is: " + str(i))
+			#print("thLimits[nextJoint] is: " + str(thLimits[nextJoint]))
 			if i <= thLimits[nextJoint]:
 				numGoodJoints += 1
 			nextJoint += 1

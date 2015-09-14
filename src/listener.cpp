@@ -1,11 +1,11 @@
 #include "ros/ros.h"
 #include "std_msgs/String.h"
 #include "std_msgs/UInt8.h"
+#include <string>
 #include "leap_motion/leapros2.h"
-#include "leap_motion/leap2.h"
 #include <sstream>
 #include <sensor_msgs/JointState.h>
-#include <tf/transform_broadcaster.h>
+//#include <tf/transform_broadcaster.h>
 //#include <tf/transform_datatypes.h>
 //#include <tf/transform_listener.h>
 /**
@@ -73,7 +73,7 @@ sensor_msgs::JointState joint_msg_leap;
 }*/
 void leapmotionCallback(const leap_motion::leapros2::ConstPtr& dataHand)
 {
-      dataHand_=(*dataHand);
+      /*dataHand_=(*dataHand);
       // Both limits for x,y,z to avoid small changes
       Uplimitex=dataLastHand_.palmpos.x+0.3;
       Downlimitex=dataLastHand_.palmpos.x-0.3;
@@ -193,24 +193,21 @@ void leapmotionCallback(const leap_motion::leapros2::ConstPtr& dataHand)
             }
       }*/
       //save new value of the last position of the hand
-      dataLastHand_=(*dataHand);
+      //dataLastHand_=(*dataHand);
 
       //we print the position of all the hand
-      printf("Palmpos \n X: %f\n  Y: %f\n Z: %f\n ",dataHand_.palmpos.x,dataHand_.palmpos.y,dataHand_.palmpos.z);
+      //printf("Palmpos \n X: %f\n  Y: %f\n Z: %f\n ",dataHand_.palmpos.x,dataHand_.palmpos.y,dataHand_.palmpos.z);
 
 }
-
 int main(int argc, char **argv)
 {
       //ini myo variables
-      FORWARD.data=0x0;
-      BACKWARD.data=0x1;
-      SWITCHMODE.data=0x2;
       //ROS
       ros::init(argc, argv,"listener");
       ros::NodeHandle n;
       ros::Rate r(1);
-      robo_pub = n.advertise<sensor_msgs::JointState>("/joint_leap", 100);
+      ros::Subscriber leapsub = n.subscribe("/leapmotion/data", 1000, leapmotionCallback);
+      //robo_pub = n.advertise<sensor_msgs::JointState>("/joint_leap", 100);
       //We have to create the JointState msg
       /*
       joint_msg_leap.name.resize(9);
@@ -225,7 +222,7 @@ int main(int argc, char **argv)
       joint_msg_leap.name[7] ="left_front_wheel_joint";
       joint_msg_leap.name[8] ="left_back_wheel_joint";
       */
-      
+      /*
       joint_msg_leap.name.resize(6);
       joint_msg_leap.position.resize(6);
       joint_msg_leap.name[0] ="arm_1_joint";
@@ -237,7 +234,7 @@ int main(int argc, char **argv)
      
       //sensor subscription
       ros::Subscriber leapsub = n.subscribe("/leapmotion/data", 1000, leapmotionCallback);
-      //ros::Subscriber myogestsub = n.subscribe("/myo_gest", 1000, myogestCallback);
-      ros::spin();
+      ros::Subscriber myogestsub = n.subscribe("/myo_gest", 1000, myogestCallback);
+      ros::spin();*/
       return 0;
 }

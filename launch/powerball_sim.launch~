@@ -3,7 +3,7 @@
 
 
 	<!-- Start the Powerball API Node -->
-	<node pkg="sensor_listener" type="schunk_api_node.py" name="schunk_api_node" output="screen"/>	
+	<node pkg="sensor_listener" type="schunk_api_node_sim.py" name="schunk_api_node_sim" output="screen"/>	
 	
 
 	

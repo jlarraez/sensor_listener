@@ -51,8 +51,7 @@ Callback for the leapmotion listener
 
 '''
 def leapmotioncallback(data):
-    print(rospy.get_caller_id() + "I heard %s", data.data)
-    print(rospy.get_caller_id() + "I heard %s", data.data)
+    rospy.loginfo(rospy.get_caller_id() + "I heard %s", data.data)
 
 '''
 This function sends a position control request to the Powerball.  The request
@@ -128,6 +127,7 @@ It will also toggle the "hasNewMessage" flag to True.
 def jointStateCallback(data):
 
 	global jointAngles
+	global gripperPos
 	global jointStateCallbackEx
 	global obj1
 	obj1=data
@@ -136,21 +136,24 @@ def jointStateCallback(data):
 	#joint_msg_leap.velocity=list(obj1.velocity)
 	#joint_msg_leap.effort=list(obj1.effort)
 	#print("I received jointStates!")
-	print("Joint Position: " + str(data))
+	#print("data: " + str(data))
 	#joint_msg_leap=[]
 	#name=list(data.name)
 	#position=list(data.position)
 	#velocity=list(data.velocity)
 	#effort=list(data.effort)
-	#obj1.position=[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]		
+	#obj1.position=[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]	
+	#print("Joint Position: " + str(data))	
 	j1 = data.position[0]
 	j2 = data.position[1]
 	j3 = data.position[2]
 	j4 = data.position[3]
 	j5 = data.position[4]
 	j6 = data.position[5]
+	j7 = data.position[6]
+	j8 = data.position[7]
 	jointAngles = [j1, j2, j3, j4, j5, j6]
-
+	gripperPos = [j7, j8]
 	jointStateCallbackEx = True
 
 '''
@@ -263,7 +266,13 @@ to move the Powerball to a target location.
 def position_api_coord_space_quat_handler(req):
 	#rospy.loginfo("Inside PostionAPICoordSpaceQuat Service call!")	
 	global jointStateCallbackEx
+	#global joint_msg_leap
+	#joint_msg_leap.name=['arm_1_joint', 'arm_2_joint', 'arm_3_joint', 'arm_4_joint', 'arm_5_joint', 'arm_6_joint','base_joint_gripper_left','base_joint_gripper_right']
+	#joint_msg_leap.position=[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+	#joint_msg_leap.velocity=[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
+	#joint_msg_leap.effort=[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0]
 
+	#rospy.loginfo("Inside server_callback!")
 	'''
 	This simple_script_server is a custom library that was created by
 	the Fraunhofer institute.  An action_handle will listen for position commands.
@@ -291,7 +300,7 @@ def position_api_coord_space_quat_handler(req):
 	First, get a list of the current joint angles.  The joint angles can be
 	found from rostopic /joint_states 
 	'''
-	sub = rospy.Subscriber("/joint_states", JointState, jointStateCallback) 
+	sub = rospy.Subscriber("/joint_states", JointState, jointStateCallback,queue_size=1) 
 	pub = rospy.Publisher("joint_leap", JointState, queue_size=10) 
 	while jointStateCallbackEx == False:
 		pass
@@ -307,11 +316,11 @@ def position_api_coord_space_quat_handler(req):
 	homoMat[1,0] = 0
 	homoMat[2,0] = 0
 	homoMat[0,1] = 0
-	homoMat[1,1] = -1
+	homoMat[1,1] = 1
 	homoMat[2,1] = 0
 	homoMat[0,2] = 0
 	homoMat[1,2] = 0
-	homoMat[2,2] = -1
+	homoMat[2,2] = 1
 	homoMat[0,3] = req.target.position.x
 	homoMat[1,3] = req.target.position.y
 	homoMat[2,3] = req.target.position.z
@@ -337,29 +346,29 @@ def position_api_coord_space_quat_handler(req):
 		# Code for Simulation 
 		#print(targetJointAngles)		
 		# Encapsulate the targetJointAngles into a trajectory:
-		#traj = []
-		#joint1=targetJointAngles[0]
-		#joint1=targetJointAngles[0]
-		#joint2=targetJointAngles[1]
-		#joint3=targetJointAngles[2]
-		#joint4=targetJointAngles[3]
-		#joint5=targetJointAngles[4]
-		#joint6=targetJointAngles[5]
-		#traj.append(joint1)
-		#traj.append(joint2)
-		#traj.append(joint3)
-		#traj.append(joint4)
-		#traj.append(joint5)
-		#traj.append(joint6)
+		traj = []
+		joint1=targetJointAngles[0]
+		joint1=targetJointAngles[0]
+		joint2=targetJointAngles[1]
+		joint3=targetJointAngles[2]
+		joint4=targetJointAngles[3]
+		joint5=targetJointAngles[4]
+		joint6=targetJointAngles[5]
+		traj.append(joint1)
+		traj.append(joint2)
+		traj.append(joint3)
+		traj.append(joint4)
+		traj.append(joint5)
+		traj.append(joint6)
 		#print(traj)
-		#position = []		 
+		position = []		 
 		# Generate the trajectory message to send to the Powerball:
 		# End code simulation
-		# Code real robot
-		targetJointAngles = targetJointAngles[:6]
+		#Code real robot
+		#targetJointAngles = targetJointAngles[:6]
 
 		# Encapsulate the targetJointAngles into a trajectory:
-		traj = [targetJointAngles] 
+		#traj = [targetJointAngles] 
 		traj_msg = JointTrajectory()
 		traj_msg.header.stamp = rospy.Time.now() + rospy.Duration(0.5)
 		traj_msg.joint_names = ['arm_1_joint', 'arm_2_joint', 'arm_3_joint', 'arm_4_joint', 'arm_5_joint', 'arm_6_joint']
@@ -369,7 +378,7 @@ def position_api_coord_space_quat_handler(req):
 		for point in traj:	
 			#print(point)	
 			#Position only in simulation
-			#position.append((point))
+			position.append((point))
 			point_nr += 1
 			point_msg = JointTrajectoryPoint()
 			point_msg.positions = point
@@ -377,35 +386,43 @@ def position_api_coord_space_quat_handler(req):
 			point_msg.time_from_start = rospy.Duration(3 * point_nr)
 			traj_msg.points.append(point_msg)
 		# Send the position control message to the action server node:
-		#position.append(-0.02885) 
-		#position.append(0.02885)
-		#obj1.position=position
-		#print(obj1.position[0])
-		#print(obj1.position[1])
-		#print(obj1.position[2])
-		#print(obj1.position[3])
-		#print(obj1.position[4])
-		#print(obj1.position[5])
-		#print(obj1.position[6])
-		#print(obj1.position[7])
-		action_server_name = '/arm/joint_trajectory_controller/follow_joint_trajectory'
+		position.append(gripperPos[0]) 
+		position.append(gripperPos[1])
+		obj1.position=position
+		#rospy.loginfo(obj1.position[0])
+		#rospy.loginfo(obj1.position[1])
+		#rospy.loginfo(obj1.position[2])
+		#rospy.loginfo(obj1.position[3])
+		#rospy.loginfo(obj1.position[4])
+		#rospy.loginfo(obj1.position[5])
+		#rospy.loginfo(obj1.position[6])
+		#rospy.loginfo(obj1.position[7])
+		resp = PositionAPICoordSpaceQuatResponse()
+		resp.ret=1;
+		resp.joint1=obj1.position[0]
+		resp.joint2=obj1.position[1]
+		resp.joint3=obj1.position[2]
+		resp.joint4=obj1.position[3]
+		resp.joint5=obj1.position[4]
+		resp.joint6=obj1.position[5]
+		#action_server_name = '/arm/joint_trajectory_controller/follow_joint_trajectory'
 		#pub.publish(obj1)
-		client = actionlib.SimpleActionClient(action_server_name, FollowJointTrajectoryAction)
-		if not client.wait_for_server(rospy.Duration(5)):
-			print("Action server not ready within timeout.  Aborting...")
-			ah.set_failed(4)
+		#client = actionlib.SimpleActionClient(action_server_name, FollowJointTrajectoryAction)
+		#if not client.wait_for_server(rospy.Duration(5)):
+		#	print("Action server not ready within timeout.  Aborting...")
+		#	ah.set_failed(4)
 			#return ah
-			return 0
-		else:
-			print("Action server ready for Coordinate API Request")
+		#	return 0
+		#else:
+			#print("Action server ready for Coordinate API Request")
 		
-		client_goal = FollowJointTrajectoryGoal()
-		client_goal.trajectory = traj_msg
-		client.send_goal(client_goal)
-		ah.set_client(client)
+		#client_goal = FollowJointTrajectoryGoal()
+		#client_goal.trajectory = traj_msg
+		#client.send_goal(client_goal)
+		#ah.set_client(client)
 
 		#ah.wait_inside()
-		return 1
+		return resp
 	
 
 '''
@@ -454,9 +471,9 @@ def init_halt_api_handler(req):
 			print("Service call failed when calling robot emergency stop; %s" % e)
 
 def api_server():
+
 	# Initialize the API Server node:
 	rospy.init_node('schunk_api_server')
-	#rospy.Rate(10)
 	#rospy.Subscriber("/leapmotion/data", leapros2, leapmotioncallback)
 	#only loginfo after init_node
 	rospy.loginfo("Schunk API Node Up!")
