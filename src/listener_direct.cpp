@@ -376,10 +376,10 @@ int main(int argc, char *argv[])
       pose.position.x = 0;
       pose.position.y = 0;
       //Real Position
-      //pose.position.z = 375;
+      pose.position.z = 375;
       old_pose=pose;
       //Simulation position
-      pose.position.z = 859.9;
+      //pose.position.z = 859.9;
               
       CAPTURE_MOVEMENT=false;//know when you have reach the maximum of points to handle
       //Creating the joint_msg_leap
@@ -427,13 +427,13 @@ int main(int argc, char *argv[])
       ROS_INFO("PRESH LEFT PEDAL TO START");
       while((s=getchar())!= '1')      
         ROS_INFO("PRESH LEFT PEDAL TO START");
-      /*
+      
       //Enable this part to communicate with the real robot
       srvinit.request.command=command;
       
       if (clientinit.call(srvinit))
       {
-      ROS_INFO("Init correct"); */
+      ROS_INFO("Init correct"); 
       /* SENSOR SUBSCRIBING */
       //LEAP MOTION
       
@@ -454,11 +454,11 @@ int main(int argc, char *argv[])
       ROS_INFO("CAPTURING POINTS FINISH");
       // End of Capturing Stage
       return 0;
-      /*}
+      }
       else
       {
         ROS_INFO("Could not init");
-      }*/
+      }
 }
 
 
