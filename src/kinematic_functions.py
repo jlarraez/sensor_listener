@@ -308,13 +308,14 @@ def ikine(T06, thP):
 	thLimits = [JOINT_1_MAX, JOINT_2_MAX, JOINT_3_MAX, JOINT_4_MAX, JOINT_5_MAX, JOINT_6_MAX]	 
 
 	# Denavit-Hartenberg Parameters for the Powerball: d1 with the normal platform 205. In our simulation joint_0 is over the robotfoot
-	d1 = 205 
-	#d1 = 89.7
+	#d1 = 205 
+	d1 = 89.7
 	a2 = 350
 	d4 = 305
 	# with Gripper d6 = 300
-	d6 = 300
-	#d6 = 75
+	#d6 = 300
+	#d6 = 93 from cad
+	d6 = 75
 	# Solve for theta 3 (Joint 3 angle): 	 
 
 	# Vector from the spherical wrist to the tooltip:

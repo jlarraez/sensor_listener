@@ -6,16 +6,28 @@
   <!--<arg name="planning_adapters" value="default_planner_request_adapters/AddTimeParameterization default_planner_request_adapters/FixWorkspaceBounds default_planner_request_adapters/FixStartStateBounds default_planner_request_adapters/FixStartStateCollision default_planner_request_adapters/FixStartStatePathConstraints" />
   -->
   <!--Rviz-ohne MoveIt paramteter-->
-  <arg name="model" value="$(find sensor_listener)/urdf/powerball_gripper.urdf" />
-  <arg name="gui" value="True" />
-	<param name="robot_description" textfile="$(arg model)" />
-	<param name="use_gui" value="$(arg gui)"/>
-  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find urdf_tutorial)/urdf.rviz" required="true" />
   
-	<node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" />
-	<rosparam param="source_list">["/joint_leap"]</rosparam>
-	<node name="robot_state_publisher" pkg="robot_state_publisher" type="state_publisher" />
-	-->
+  <!--<arg name="model" value="$(find sensor_listener)/urdf/powerball_gripper.urdf" />-->
+  
+	<!--<param name="robot_description" textfile="$(arg model)" />-->
+	
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(find urdf_tutorial)/urdf.rviz" required="true" />
+  <arg name="gui" value="true"/>
+  <param name="use_gui" value="$(arg gui)"/>
+  <rosparam>
+  zeros:
+      arm_1_joint: 0.0
+      arm_2_joint: 0.73
+      arm_3_joint: 1.69
+      arm_4_joint: 0.0
+      arm_5_joint: 1.98
+      arm_6_joint: -0.02
+      pg70_finger_left_joint: 0.3
+  </rosparam>
+	<node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" >
+	<!--<rosparam param="source_list">["/joint_leap"]</rosparam>-->
+	<remap from="robot_state_publisher" to="/arm/robot_state_publisher"/>
+	</node>
   <!--Node that read data from LeapMotion and publish it -->
   <node name="leap_motion" pkg="leap_motion" type="sender.py" respawn="false" />
   

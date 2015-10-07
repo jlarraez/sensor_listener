@@ -126,6 +126,7 @@ This callback assigns the new joint positions to variables j1...j6.
 It will also toggle the "hasNewMessage" flag to True. 
 '''
 def jointStateCallback(data):
+
 	global jointAngles
 	global jointStateCallbackEx
 	global obj1
@@ -148,8 +149,8 @@ def jointStateCallback(data):
 	j4 = data.position[3]
 	j5 = data.position[4]
 	j6 = data.position[5]
-	j7 = data.position[6]
 	jointAngles = [j1, j2, j3, j4, j5, j6]
+
 	jointStateCallbackEx = True
 
 '''
@@ -211,7 +212,7 @@ def position_api_coord_space_handler(req):
 	'''
 	print(homoMat)
 	#print(jointAngles)
-	#targetJointAngles = kf.ikine(homoMat, jointAngles)
+	targetJointAngles = kf.ikine(homoMat, jointAngles)
 	print("targetJointAngles")
 	if len(targetJointAngles) != 0:
 		# We have a valid solution!  Move the Powerball to this location:
@@ -262,8 +263,7 @@ to move the Powerball to a target location.
 def position_api_coord_space_quat_handler(req):
 	#rospy.loginfo("Inside PostionAPICoordSpaceQuat Service call!")	
 	global jointStateCallbackEx
-	global gripper
-	gripper=0.5	
+
 	'''
 	This simple_script_server is a custom library that was created by
 	the Fraunhofer institute.  An action_handle will listen for position commands.
@@ -327,56 +327,85 @@ def position_api_coord_space_quat_handler(req):
 	#print(homoMat)
 	#print(SolMat)
 	#print(jointAngles)
-	#try:
-		#targetJointAngles = kf.ikine(homoMat, jointAngles)
-	#except ValueError:
-		#print("ERROR: Position out of Range")
-		#return 0		
-	#if len(targetJointAngles) != 0:
-	if len(jointAngles) != 0:		
-		# We have a valid solution!  Move the Powerball to this location: 	 
+	try:
+		targetJointAngles = kf.ikine(homoMat, jointAngles)
+	except ValueError:
+		print("ERROR: Position out of Range")
+		return 0		
+	if len(targetJointAngles) != 0:
+		# We have a valid solution!  Move the Powerball to this location: 
+		# Code for Simulation 
+		#print(targetJointAngles)		
+		# Encapsulate the targetJointAngles into a trajectory:
+		#traj = []
+		#joint1=targetJointAngles[0]
+		#joint1=targetJointAngles[0]
+		#joint2=targetJointAngles[1]
+		#joint3=targetJointAngles[2]
+		#joint4=targetJointAngles[3]
+		#joint5=targetJointAngles[4]
+		#joint6=targetJointAngles[5]
+		#traj.append(joint1)
+		#traj.append(joint2)
+		#traj.append(joint3)
+		#traj.append(joint4)
+		#traj.append(joint5)
+		#traj.append(joint6)
+		#print(traj)
+		#position = []		 
 		# Generate the trajectory message to send to the Powerball:
 		# End code simulation
 		# Code real robot
-		#targetJointAngles = targetJointAngles[:6]
-		jointAngles.append(req.gripper)
-		#trajectory=jointAngles
-		#trajectory.append(1.0)
+		targetJointAngles = targetJointAngles[:6]
+
 		# Encapsulate the targetJointAngles into a trajectory:
-		#traj = [targetJointAngles]
-		traj = [jointAngles]
-		#traj.append(gripper)
+		traj = [targetJointAngles] 
 		traj_msg = JointTrajectory()
 		traj_msg.header.stamp = rospy.Time.now() + rospy.Duration(0.5)
-		traj_msg.joint_names = ['arm_1_joint', 'arm_2_joint', 'arm_3_joint', 'arm_4_joint', 'arm_5_joint', 'arm_6_joint','pg70_finger_left_joint']
+		traj_msg.joint_names = ['arm_1_joint', 'arm_2_joint', 'arm_3_joint', 'arm_4_joint', 'arm_5_joint', 'arm_6_joint']
 		point_nr = 0
+
+		# Set the target velocities of the target joints.  They are set to 0 to denote stopping at the destinations:
 		for point in traj:	
-			print(point)	
+			#print(point)	
 			#Position only in simulation
 			#position.append((point))
 			point_nr += 1
-			print("Point num %d " % point_nr)
 			point_msg = JointTrajectoryPoint()
 			point_msg.positions = point
-			point_msg.velocities = [0.0, 0.0, 0.0 ,0.0, 0.0 ,0.0, 0.1]
+			point_msg.velocities = [0] * 6
 			point_msg.time_from_start = rospy.Duration(3 * point_nr)
 			traj_msg.points.append(point_msg)
+		# Send the position control message to the action server node:
+		#position.append(-0.02885) 
+		#position.append(0.02885)
+		#obj1.position=position
+		#print(obj1.position[0])
+		#print(obj1.position[1])
+		#print(obj1.position[2])
+		#print(obj1.position[3])
+		#print(obj1.position[4])
+		#print(obj1.position[5])
+		#print(obj1.position[6])
+		#print(obj1.position[7])
 		action_server_name = '/arm/joint_trajectory_controller/follow_joint_trajectory'
+		#pub.publish(obj1)
 		client = actionlib.SimpleActionClient(action_server_name, FollowJointTrajectoryAction)
 		if not client.wait_for_server(rospy.Duration(5)):
 			print("Action server not ready within timeout.  Aborting...")
-			#ah.set_failed(4)
+			ah.set_failed(4)
 			#return ah
 			return 0
 		else:
 			print("Action server ready for Coordinate API Request")
-		client_goal = FollowJointTrajectoryGoal()		
+		
+		client_goal = FollowJointTrajectoryGoal()
 		client_goal.trajectory = traj_msg
 		client.send_goal(client_goal)
-		print("goal send")
-		#ah.set_client(client)	
+		ah.set_client(client)
+
 		#ah.wait_inside()
-	return 1
+		return 1
 	
 
 '''

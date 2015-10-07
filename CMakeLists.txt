@@ -118,8 +118,9 @@ include_directories(
 
 ## Declare a cpp executable
 #add_executable(listener_learning src/listener_learning.cpp)
-add_executable(listener_direct src/listener_direct.cpp)
-add_executable(listener src/movegroup_obstacles.cpp)
+#add_executable(listener_direct src/listener_direct_gripper.cpp)
+add_executable(listener_direct src/listener_direct_gripper.cpp)
+#add_executable(listener src/movegroup_obstacles.cpp)
 #add_executable(pedal_security src/pedal_security.cpp)
 
 ## Add cmake target dependencies of the executable/library
@@ -130,9 +131,9 @@ add_executable(listener src/movegroup_obstacles.cpp)
 # target_link_libraries(listener_learning
 #   ${catkin_LIBRARIES}
 #)
- target_link_libraries(listener
-  ${catkin_LIBRARIES}
-)
+ #target_link_libraries(listener
+#  ${catkin_LIBRARIES}
+#)
  target_link_libraries(listener_direct
    ${catkin_LIBRARIES} -lpython2.7
 )
