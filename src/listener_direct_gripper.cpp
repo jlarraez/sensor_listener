@@ -109,6 +109,8 @@ double rot7 = 0;
 double rot8 = 0;
 float gripper_pose=0.0;
 float old_gripper_pose=0.0;
+float up_old_gripper_pose=0.0;
+float down_old_gripper_pose=0.0;
 
 leap_motion::leapros2 dataLastHand_;
 //Transformation of yout movement of the arm into movement of the robot
@@ -252,6 +254,8 @@ public:
         Updifferencey=dataLastHand_.palmpos.y+20;
         Downdifferencey=dataLastHand_.palmpos.y-20;
         old_gripper_pose=DtA+DtAx*dataHand_.finger_distance;
+        up_old_gripper_pose=old_gripper_pose+0.15;
+        down_old_gripper_pose=old_gripper_pose-0.15;
         //ROS_INFO("ORIGINAL POSITION OF THE HAND SET TO \n X: %f\n  Y: %f\n Z: %f\n ",trajectory_hand.at(i).palmpos.x,trajectory_hand.at(i).palmpos.y,trajectory_hand.at(i).palmpos.z);
         
         //sleep(2);
@@ -263,9 +267,8 @@ public:
             //rot8=DtA+DtAx*dataHand_.finger_distance;
             gripper_pose=DtA+DtAx*dataHand_.finger_distance;
             joint_msg_leap=jointstate_;
-            joint_msg_leap.position[7] = -rot8;
-            joint_msg_leap.position[6] = rot7;
-            if ((dataHand_.palmpos.x<Downdifferencex)||(dataHand_.palmpos.x>Updifferencex)||(dataHand_.palmpos.y<Downdifferencey)||(dataHand_.palmpos.y>Updifferencey)||(dataHand_.palmpos.z<Downdifferencez)||(dataHand_.palmpos.z>Updifferencez)||(gripper_pose>old_gripper_pose)||(gripper_pose<old_gripper_pose))
+            joint_msg_leap.position[6] =joint_msg_leap.position[6]/10;
+            if ((dataHand_.palmpos.x<Downdifferencex)||(dataHand_.palmpos.x>Updifferencex)||(dataHand_.palmpos.y<Downdifferencey)||(dataHand_.palmpos.y>Updifferencey)||(dataHand_.palmpos.z<Downdifferencez)||(dataHand_.palmpos.z>Updifferencez)||(gripper_pose>up_old_gripper_pose)||(gripper_pose<down_old_gripper_pose))
               {
                 //q.setRPY(0,0,M_PI/2);//Fixed Position for testing
                 q.setRPY(0,0,M_PI/2);//Fixed Position for testing
@@ -311,6 +314,7 @@ public:
                 } 
               }
          //We get the aswer of the service and publish it into the joint_msg_leap message (simulation)
+         robo_pub.publish(joint_msg_leap);
          /*joint_msg_leap.position[0] = srv.response.joint1;
          joint_msg_leap.position[1] = srv.response.joint2;
          joint_msg_leap.position[2] = srv.response.joint3;
@@ -391,23 +395,22 @@ int main(int argc, char *argv[])
       pose.position.x = 0;
       pose.position.y = 0;
       //Real Position
-      pose.position.z = 375;
+      //pose.position.z = 375;
       old_pose=pose;
       //Simulation position
-      //pose.position.z = 859.9;
+      pose.position.z = 859.9;
               
       CAPTURE_MOVEMENT=false;//know when you have reach the maximum of points to handle
       //Creating the joint_msg_leap
-      joint_msg_leap.name.resize(8);
-      joint_msg_leap.position.resize(8);
+      joint_msg_leap.name.resize(7);
+      joint_msg_leap.position.resize(7);
       joint_msg_leap.name[0]="arm_1_joint";
       joint_msg_leap.name[1]="arm_2_joint";
       joint_msg_leap.name[2]="arm_3_joint";
       joint_msg_leap.name[3]="arm_4_joint";
       joint_msg_leap.name[4]="arm_5_joint";
       joint_msg_leap.name[5]="arm_6_joint";
-      joint_msg_leap.name[6]="base_joint_gripper_left";
-      //joint_msg_leap.name[7]="base_joint_gripper_right";
+      joint_msg_leap.name[6]="pg70_finger_left_joint";
       aux_enter=1;
       FIRST_VALUE=true;//Help knowing Initial Position of the hand
       int arm_trajectory_point=1;
@@ -431,7 +434,7 @@ int main(int argc, char *argv[])
       leapmotionlistener.Configure(count);
       ros::NodeHandle node_handle("~");
       robo_pub = node_handle.advertise<sensor_msgs::JointState>("/joint_leap", 1);
-      robo_sub = node_handle.subscribe("/joint_states", 1, joinstateCallback);
+      robo_sub = node_handle.subscribe("/arm/joint_states", 1, joinstateCallback);
       ros::ServiceClient clientinit = node_handle.serviceClient<sensor_listener::InitHaltAPI>("/InitHaltAPI");
       sensor_listener::InitHaltAPI srvinit;
       // start a ROS spinning thread

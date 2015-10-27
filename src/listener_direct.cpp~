@@ -120,7 +120,7 @@ bool CAPTURE_MOVEMENT;
 std_msgs::UInt8 BACKWARD;
 std_msgs::UInt8 FORWARD;
 std_msgs::UInt8 SWITCHMODE; 
-//ROs publisher
+//ROs publisher and Subscriber
 ros::Publisher robo_pub;
 ros::Subscriber robo_sub;
 //msg from the joinstate
@@ -251,8 +251,7 @@ public:
             rot7=DtA+DtAx*dataHand_.finger_distance;
             rot8=DtA+DtAx*dataHand_.finger_distance;
             joint_msg_leap=jointstate_;
-            joint_msg_leap.position[7] = -rot8;
-            joint_msg_leap.position[6] = rot7;
+            joint_msg_leap.position[6] = rot8;
             if ((dataHand_.palmpos.x<Downdifferencex)||(dataHand_.palmpos.x>Updifferencex)||(dataHand_.palmpos.y<Downdifferencey)||(dataHand_.palmpos.y>Updifferencey)||(dataHand_.palmpos.z<Downdifferencez)||(dataHand_.palmpos.z>Updifferencez))
               {
                 q.setRPY(0,0,M_PI/2);//Fixed Position for testing
@@ -307,7 +306,6 @@ public:
  //ROS_INFO("END EFFECTOR POSITION \n X: %f\n  Y: %f\n Z: %f\n", pose.position.x,pose.position.y,pose.position.z);
     
 }
-
   void LeapMotionListener::setPointertoGroup(moveit::planning_interface::MoveGroup *pointertogroup)
   {
     pgroup=pointertogroup;
@@ -340,49 +338,18 @@ public:
   {
    pclient=pointerto_client;
   }
-
-
-
-
-/*void myogestCallback( const std_msgs::UInt8::ConstPtr& myogest)
-{
-      
-      myogest_=(*myogest);
-      joint_msg_leap.header.stamp = ros::Time::now();
-      printf("%08x\n",myogest_);
-      if(myogest_.data==BACKWARD.data)
-      {
-        	//ROS_INFO("BACKWARD");
-        	myo_state=2;
-	}	
-      if(myogest_.data==FORWARD.data)
-      {
-	      //ROS_INFO("FORWARD");
-	      myo_state=1;
-      }
-       if(myogest_.data==SWITCHMODE.data)
-      {
-	      //ROS_INFO("FORWARD");
-	      myo_state=3;
-      }
-}*/
-
-
 int main(int argc, char *argv[])
 {     
-      
       //Initial position
-      
       pose.position.x = 0;
       pose.position.y = 0;
       //Real Position
       pose.position.z = 375;
       old_pose=pose;
       //Simulation position
-      //pose.position.z = 859.9;
-              
+      //pose.position.z = 859.9;       
       CAPTURE_MOVEMENT=false;//know when you have reach the maximum of points to handle
-      //Creating the joint_msg_leap
+      //Creating the joint_msg_leap to send to the joint_state_publisher
       joint_msg_leap.name.resize(8);
       joint_msg_leap.position.resize(8);
       joint_msg_leap.name[0]="arm_1_joint";
@@ -419,24 +386,11 @@ int main(int argc, char *argv[])
       robo_sub = node_handle.subscribe("/joint_states", 1, joinstateCallback);
       ros::ServiceClient clientinit = node_handle.serviceClient<sensor_listener::InitHaltAPI>("/InitHaltAPI");
       sensor_listener::InitHaltAPI srvinit;
-      // start a ROS spinning thread
-      //ros::AsyncSpinner spinner(1);
-      //we need this for leap
       ros::Rate r(10);
-     
       ROS_INFO("PRESH LEFT PEDAL TO START");
       while((s=getchar())!= '1')      
         ROS_INFO("PRESH LEFT PEDAL TO START");
-      
-      //Enable this part to communicate with the real robot
       srvinit.request.command=command;
-      
-      if (clientinit.call(srvinit))
-      {
-      ROS_INFO("Init correct"); 
-      /* SENSOR SUBSCRIBING */
-      //LEAP MOTION
-      
       ROS_INFO("SUBSCRIBING LEAPMOTION");
       ros::Subscriber leapsub = node_handle.subscribe("/leapmotion/data", 1, &LeapMotionListener::leapmotionCallback, &leapmotionlistener);
 
@@ -454,11 +408,7 @@ int main(int argc, char *argv[])
       ROS_INFO("CAPTURING POINTS FINISH");
       // End of Capturing Stage
       return 0;
-      }
-      else
-      {
-        ROS_INFO("Could not init");
-      }
+
 }
 
 

@@ -13,7 +13,7 @@
 	<!--Node that read data from LeapMotion and publish it -->
   <node name="leap_motion" pkg="leap_motion" type="sender.py" respawn="false" />
 	
-	<node name="listener" pkg="sensor_listener" type="listener" respawn="false" output="screen"/>
+	<node name="listener" pkg="sensor_listener" type="listener_direct" respawn="false" output="screen"/>
 	
 	<!--To roslaunch write: roslaunch sensor_listener gripper.launch model:=urdf/scout-roboter.urdf gui:=True topic:=/joint_leap-->
 </launch>

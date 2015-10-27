@@ -7,17 +7,17 @@
   <!--GRIPPER DEFINITION START-->
   
   
-    <node ns="arm" pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
+    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" >
       <param name="publish_frequency" type="double" value="50.0" />
       <param name="tf_prefix" type="string" value="" />
-      <!--remap from="joint_states" to="/arm/joint_states"/-->
+      <!--<remap from="/joint_states" to="/arm/joint_states"/>-->
   </node>
 
   <!--node ns="lwa4p" name="driver" pkg="canopen_motor_node" type="canopen_motor_node" output="screen" clear_params="true" launch-prefix="gdb -ex run -/-args"-->
   <node ns="arm" name="driver" pkg="canopen_motor_node" type="canopen_motor_node" output="screen" clear_params="true" launch-prefix="">
      <rosparam command="load" file="$(find schunk_lwa4p)/config/can0.yaml" />
      <rosparam command="load" file="$(find schunk_lwa4p)/config/gripper_driver.yaml" />
-     <!--remap from="joint_states" to="/joint_states"/-->
+     <!--<remap from="joint_states" to="/joint_states"/>-->
   </node>
   
   

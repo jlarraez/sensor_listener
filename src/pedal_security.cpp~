@@ -19,8 +19,8 @@ int main(int argc, char **argv)
       schunk_api::InitHaltAPI srv;
       while((s=getchar())!= '2')      
         ROS_INFO("NOT STOP DETECTED");
-      srv.request.a = atoll(argv[1]);
-      srv.request.b = atoll(argv[2]);
+      srv.request.command = "halt";
+      //srv.request.b = atoll(argv[2]);
       if (client.call(srv))
       {
         ROS_INFO("Status: %d", (int)srv.response.status);

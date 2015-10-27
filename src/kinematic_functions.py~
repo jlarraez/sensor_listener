@@ -308,8 +308,8 @@ def ikine(T06, thP):
 	thLimits = [JOINT_1_MAX, JOINT_2_MAX, JOINT_3_MAX, JOINT_4_MAX, JOINT_5_MAX, JOINT_6_MAX]	 
 
 	# Denavit-Hartenberg Parameters for the Powerball: d1 with the normal platform 205. In our simulation joint_0 is over the robotfoot
-	#d1 = 205 
-	d1 = 89.7
+	d1 = 205 
+	#d1 = 89.7
 	a2 = 350
 	d4 = 305
 	# with Gripper d6 = 300
@@ -542,7 +542,7 @@ def ikine(T06, thP):
 
 	#print("tempOut: ")
 	#print(tempOut)
-	print("STEP 1")
+	#print("STEP 1")
 	tempOutLim = tempOut[0:7, 0:counter]
 
 	#print("tempOutLim.shape[0]: " + str(tempOutLim.shape[0]))

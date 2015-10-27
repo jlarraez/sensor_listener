@@ -6,9 +6,9 @@
   <!--<arg name="planning_adapters" value="default_planner_request_adapters/AddTimeParameterization default_planner_request_adapters/FixWorkspaceBounds default_planner_request_adapters/FixStartStateBounds default_planner_request_adapters/FixStartStateCollision default_planner_request_adapters/FixStartStatePathConstraints" />
   -->
   <!--Rviz-ohne MoveIt paramteter-->
-  <arg name="model" value="$(find sensor_listener)/urdf/powerball_gripper.urdf" />
+
   <arg name="gui" value="True" />
-	<param name="robot_description" textfile="$(arg model)" />
+  <param name="robot_description" command="$(find xacro)/xacro.py '$(find schunk_lwa4p)/urdf/robot.urdf'" />
 	<param name="use_gui" value="$(arg gui)"/>
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(find urdf_tutorial)/urdf.rviz" required="true" />
   
@@ -34,6 +34,11 @@
 	<!--<node pkg="sensor_listener" type="pedal_security.py" name="security_pedal_node" respawn="true" output="screen"/>-->
 	
   
+
+
+	<!-- Start the Powerball API Node -->
+	<node pkg="sensor_listener" type="schunk_api_node_sim.py" name="schunk_api_node_sim" output="screen"/>	
+	
 
 
 <!--

@@ -407,7 +407,7 @@ def init_halt_api_handler(req):
 			print("Service call failed when initializing robot: %s" % e)
 			return 0
 	elif userCmd == 'halt':
-		rospy.wait_for_service('/arm_controller/halt')
+		rospy.wait_for_service('/arm/driver/halt')
 		try:
 			haltRobot = rospy.ServiceProxy('/arm_controller/halt', Trigger)
 			resp = haltRobot()
@@ -416,7 +416,7 @@ def init_halt_api_handler(req):
 			print("Service call failed when calling robot halt: %s" % e)
 	else:
 		# Treat any other command received as an emergency stop:
-		rospy.wait_for_service('/arm_controller/stop', Trigger)
+		rospy.wait_for_service('/arm/driver/stop', Trigger)
 		try:
 			estopRobot = rospy.ServiceProxy('/arm_controller/stop', Trigger)
 			resp = estopRobot()

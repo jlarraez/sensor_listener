@@ -22,11 +22,11 @@
       arm_4_joint: 0.0
       arm_5_joint: 1.98
       arm_6_joint: -0.02
-      pg70_finger_left_joint: 0.3
+      pg70_finger_left_joint: 0.03
   </rosparam>
 	<node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher" >
-	<!--<rosparam param="source_list">["/joint_leap"]</rosparam>-->
-	<remap from="robot_state_publisher" to="/arm/robot_state_publisher"/>
+	<rosparam param="source_list">["/joint_leap"]</rosparam>
+	<!--<remap from="robot_state_publisher" to="/arm/robot_state_publisher"/>-->
 	</node>
   <!--Node that read data from LeapMotion and publish it -->
   <node name="leap_motion" pkg="leap_motion" type="sender.py" respawn="false" />
@@ -43,7 +43,7 @@
   </node>
   
   <!-- Start the Security pedal Node-->
-	<!--<node pkg="sensor_listener" type="pedal_security.py" name="security_pedal_node" respawn="true" output="screen"/>-->
+	<node pkg="sensor_listener" type="pedal_security.py" name="security_pedal_node" respawn="true" />
 	
   
 

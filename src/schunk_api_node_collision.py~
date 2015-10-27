@@ -152,9 +152,8 @@ def jointStateCallback(data):
 	j5 = data.position[4]
 	j6 = data.position[5]
 	j7 = data.position[6]
-	j8 = data.position[7]
 	jointAngles = [j1, j2, j3, j4, j5, j6]
-	gripperPos = [j7, j8]
+	gripperPos = [j7]
 	jointStateCallbackEx = True
 
 '''
@@ -388,7 +387,6 @@ def position_api_coord_space_quat_handler(req):
 			traj_msg.points.append(point_msg)
 		# Send the position control message to the action server node:
 		position.append(gripperPos[0]) 
-		position.append(gripperPos[1])
 		obj1.position=position
 		#rospy.loginfo(obj1.position[0])
 		#rospy.loginfo(obj1.position[1])

@@ -2,9 +2,6 @@
 #include "std_msgs/String.h"
 #include <string>
 #include "std_msgs/UInt8.h"
-//Schunk_api msg include
-#include "sensor_listener/PositionAPICoordSpaceQuat.h"
-#include "sensor_listener/InitHaltAPI.h"
 #include "leap_motion/leapros2.h"
 #include "leap_motion/leap2.h"
 #include <sstream>
@@ -44,6 +41,9 @@
 
 #include <boost/bind.hpp>
 
+//Schunk_api msg include
+#include "sensor_listener/PositionAPICoordSpaceQuat.h"
+#include "sensor_listener/InitHaltAPI.h"
 
 //Pedal includes for changing way we read values from keyboard
 #include<stdio.h>
@@ -51,8 +51,9 @@
 #include <unistd.h>     //STDIN_FILENO
 
 //Allow to use Pythons scripts
-//#include <numpy/arrayobject.h>
-//#include <math.h>
+#include </usr/include/python2.7/Python.h>
+#include <numpy/arrayobject.h>
+#include <math.h>
 
 //#include <tf/transform_datatypes.h>
 //#include <tf/transform_listener.h>
@@ -66,12 +67,11 @@ geometry_msgs::Pose target_pose1;
 //Callback pose
 geometry_msgs::Pose old_pose;
 //waypoints
-geometry_msgs::Pose pose;
+geometry_msgs::PoseStamped pose;
 
 
 
-std::string command="init";
-int acept;
+
 std::string s;
 const double degree = M_PI/180;
 //von Experiment: max Finger_distance=163 min Finger_distance=14
@@ -89,16 +89,10 @@ double rot5 = 0;
 double rot6 = 0;
 double rot7 = 0;
 double rot8 = 0;
-float gripper_pose=0.0;
-float old_gripper_pose=0.0;
-float up_old_gripper_pose=0.0;
-float down_old_gripper_pose=0.0;
-bool end=true;
 
 leap_motion::leapros2 dataLastHand_;
 
-const float FactorTransformation=2;
-const float Uplimitez=1300;
+const float Uplimitez=1.32;
 const float Downlimitez=1.0;
 float Downdifferencez;
 float Downdifferencey;
@@ -115,11 +109,8 @@ bool CAPTURE_MOVEMENT;
 std_msgs::UInt8 BACKWARD;
 std_msgs::UInt8 FORWARD;
 std_msgs::UInt8 SWITCHMODE; 
-//ROs publisher and Subscriber
+//ROs publisher
 ros::Publisher robo_pub;
-ros::Subscriber robo_sub;
-//msg from the joinstate
-sensor_msgs::JointState jointstate_;
 //msg for the joint
 sensor_msgs::JointState joint_msg_leap;
 //Pointer to moveit Objects
@@ -131,34 +122,18 @@ planning_scene::PlanningScene *pointertopscene1;
 const robot_model::JointModelGroup* joint_model_group;
 ros::Publisher *pointertod_publisher;
 ros::Subscriber *pointertod_subscriber;
-ros::ServiceClient *pointerto_client;
 //Number of points we have implement for the trajectory of the arm
 int arm_trajectory_point;
 //waypoints
 std::vector<geometry_msgs::Pose> waypoints;
 
 //We declare a vectr of PoseStamp
-std::vector<leap_motion::leapros2> trajectory_hand;
-std::vector<geometry_msgs::Pose> pose_vector;
-//Vector with the joint sequences that we have recorded
-std::vector<std::vector<double> > joint_position_vector;
-//Vector with the joint sequences that we have recorded (NO COLLISION)
-std::vector<std::vector<double> > joint_position_corr_vector;
+std::vector<leap_motion::leapros2> trajectory_hand; 
 leap_motion::leapros2 TrajectoryPoint;
 
 //Count
 int count;
 int aux_enter;
-
-//Srv to comunicate with CLient and Server
-sensor_listener::PositionAPICoordSpaceQuat srv;
-
-
-void joinstateCallback (const sensor_msgs::JointState::ConstPtr& JointState)
-{
-jointstate_=*JointState;
-//ROS_INFO("JOINT STATE \n J1: %f\n  J2: %f\n J3: %f\n J4: %f\n  J5: %f\n J6: %f\n J5: %f\n J6: %f\n ",jointstate_.position[0],jointstate_.position[1],jointstate_.position[2],jointstate_.position[3],jointstate_.position[4],jointstate_.position[5],jointstate_.position[6],jointstate_.position[7],jointstate_.position[7]);
-}
 
 
 //We implement the LeapMotionListener Class with the leapmotionCallback function. We will use this function as callback for
@@ -187,8 +162,6 @@ private:
   int counter;
   ros::Publisher *pdisplay_publisher;
   ros::Subscriber *pdisplay_subscriber;
-  ros::ServiceClient *pclient;
-  tf::Quaternion q;
 
   
 public:
@@ -199,7 +172,6 @@ public:
    void setPointertoScene(planning_scene::PlanningScenePtr *pointertopscene);
    void setPointertoPublisher(ros::Publisher *pointertod_publisher);
    void setPointertoSubscriber(ros::Subscriber *pointertod_subscriber);
-   void setPointertoClient(ros::ServiceClient *pointerto_client);
    void Configure(int count);
    LeapMotionListener();
    
@@ -222,118 +194,22 @@ public:
     
 }
   void LeapMotionListener::leapmotionCallback(const leap_motion::leapros2::ConstPtr& dataHand)
-{     
-      std::vector<double> joint_position;
+{
       dataHand_=(*dataHand);
-      //ROS_INFO("INSIDE CALLBACK");
-      //We create the values of reference for the first postion of our hand
+      ROS_INFO("INSIDE CALLBACK");
       if (counter>0)
       {
-      trajectory_hand.push_back(dataHand_);
-      counter--;
-        if (FIRST_VALUE)
-          {
-          dataLastHand_.palmpos.x=dataHand_.palmpos.x;
-          dataLastHand_.palmpos.y=dataHand_.palmpos.y;
-          dataLastHand_.palmpos.z=dataHand_.palmpos.z;
-          FIRST_VALUE=0;
-          Updifferencex=dataLastHand_.palmpos.x+10;
-          Downdifferencex=dataLastHand_.palmpos.x-10;
-          Updifferencez=dataLastHand_.palmpos.z+10;
-          Downdifferencez=dataLastHand_.palmpos.z-20;
-          Updifferencey=dataLastHand_.palmpos.y+20;
-          Downdifferencey=dataLastHand_.palmpos.y-20;
-          old_gripper_pose=DtA+DtAx*dataHand_.finger_distance;
-          up_old_gripper_pose=old_gripper_pose+0.15;
-          down_old_gripper_pose=old_gripper_pose-0.15;
-          //ROS_INFO("ORIGINAL POSITION OF THE HAND SET TO \n X: %f\n  Y: %f\n Z: %f\n ",trajectory_hand.at(i).palmpos.x,trajectory_hand.at(i).palmpos.y,trajectory_hand.at(i).palmpos.z);
-          
-          //sleep(2);
-          }
-          else
-          {
-              //We get the distance between the finger and transform it into gripper distance
-              gripper_pose=DtA+DtAx*dataHand_.finger_distance;
-              joint_msg_leap=jointstate_;
-              joint_msg_leap.position[6] = rot8;
-              if ((dataHand_.palmpos.x<Downdifferencex)||(dataHand_.palmpos.x>Updifferencex)||(dataHand_.palmpos.y<Downdifferencey)||(dataHand_.palmpos.y>Updifferencey)||(dataHand_.palmpos.z<Downdifferencez)||(dataHand_.palmpos.z>Updifferencez)||(gripper_pose>up_old_gripper_pose)||(gripper_pose<down_old_gripper_pose))
-                {
-                  q.setRPY(0,0,M_PI/2);//Fixed Position for testing
-                  pose.orientation.x = q.getAxis().getZ();//cambiado aposta
-                  pose.orientation.y = q.getAxis().getY();
-                  pose.orientation.z = q.getAxis().getX();//cambiado aposta
-                  pose.orientation.w = q.getW();
-                  //pose.orientation.w = ;
-                  //pose.orientation.z=1;
-                  //pose.orientation.y=0;
-                  //pose.orientation.x=0;
-                  //We need to send the correct axis to the robot. Currently they are rotated and x is z
-                  //ROS_INFO("VALUES OF THE QUATERNION SET TO \n X: %f\n  Y: %f\n Z: %f W: %f\n",pose.orientation.x,pose.orientation.y,pose.orientation.z,pose.orientation.w);
-                  pose.position.y +=(dataHand_.palmpos.x-dataLastHand_.palmpos.x);
-                  pose.position.z +=(dataHand_.palmpos.y-dataLastHand_.palmpos.y);
-                  if(pose.position.z>Uplimitez)
-                  pose.position.z=Uplimitez;
-                  pose.position.x +=(dataHand_.palmpos.z-dataLastHand_.palmpos.z);
-                  //Here we instantiate an autogenerated service class 
-                  //ROS_INFO("VALUES OF THE POSITION SET TO \n X: %f\n  Y: %f\n Z: %f W: %f\n",pose.position.x,pose.position.y,pose.position.z);
-                  srv.request.target = pose ;
-                  srv.request.gripper = gripper_pose ;
-                  if (pclient->call(srv))
-                  {
-                    //ROS_INFO("Ret: %d", (int)srv.response.ret);
-                    dataLastHand_.palmpos.x=dataHand_.palmpos.x;
-                    dataLastHand_.palmpos.y=dataHand_.palmpos.y;
-                    dataLastHand_.palmpos.z=dataHand_.palmpos.z;
-                    // Both limits for x,y,z to avoid small changes
-                    Updifferencex=dataLastHand_.palmpos.x+10;//
-                    Downdifferencex=dataLastHand_.palmpos.x-10;
-                    Updifferencez=dataLastHand_.palmpos.z+10;
-                    Downdifferencez=dataLastHand_.palmpos.z-20;
-                    Updifferencey=dataLastHand_.palmpos.y+20;
-                    Downdifferencey=dataLastHand_.palmpos.y-20;
-                    old_pose=pose;
-                  joint_position.push_back(static_cast<double>(srv.response.joint1));
-                  joint_position.push_back(static_cast<double>(srv.response.joint2));
-                  joint_position.push_back(static_cast<double>(srv.response.joint3));
-                  joint_position.push_back(static_cast<double>(srv.response.joint4));
-                  joint_position.push_back(static_cast<double>(srv.response.joint5));
-                  joint_position.push_back(static_cast<double>(srv.response.joint6));
-                  pose_vector.push_back(pose);
-                  joint_position_vector.push_back(joint_position);
-                    //ROS_INFO("response %d\n",srv.response.ret);
-                  }
-                  else
-                  {
-                    ROS_ERROR("Position out of range");
-                    pose=old_pose;
-                  } 
-
-                }
-           //We get the aswer of the service and publish it into the joint_msg_leap message
-           joint_msg_leap.position[0] = srv.response.joint1;
-           
-           joint_msg_leap.position[1] = srv.response.joint2;
-           //joint_position.push_back(static_cast<double>(srv.response.joint2));
-           joint_msg_leap.position[2] = srv.response.joint3;
-           //joint_position.push_back(static_cast<double>(srv.response.joint3));
-           joint_msg_leap.position[3] = srv.response.joint4;
-           //joint_position.push_back(static_cast<double>(srv.response.joint4));
-           joint_msg_leap.position[4] = srv.response.joint5;
-           //joint_position.push_back(static_cast<double>(srv.response.joint5));
-           joint_msg_leap.position[5] = srv.response.joint6;
-           //joint_position.push_back(static_cast<double>(srv.response.joint6));
-           robo_pub.publish(joint_msg_leap);
-           //pose_vector.push_back(pose);
-           //joint_position_vector.push_back(joint_position);
-          }
+        ROS_INFO("ADDING POINT %d TO TRAJECTORY",counter);
+        trajectory_hand.push_back(dataHand_);
+        counter--;
       }
       else
       {
         ROS_INFO("TRAJECTORY OF THE HAND COMPLETE");
         CAPTURE_MOVEMENT=true;
+       sleep(5);
       }
-   //ROS_INFO("END EFFECTOR POSITION \n X: %f\n  Y: %f\n Z: %f\n", pose.position.x,pose.position.y,pose.position.z);
-      
+    
 }
 
   void LeapMotionListener::setPointertoGroup(moveit::planning_interface::MoveGroup *pointertogroup)
@@ -364,43 +240,60 @@ public:
   {
    pdisplay_subscriber=pointertod_subscriber;
   }
-  void LeapMotionListener::setPointertoClient(ros::ServiceClient *pointerto_client)
-  {
-   pclient=pointerto_client;
-  }
+
+
+
+
+/*void myogestCallback( const std_msgs::UInt8::ConstPtr& myogest)
+{
+      
+      myogest_=(*myogest);
+      joint_msg_leap.header.stamp = ros::Time::now();
+      printf("%08x\n",myogest_);
+      if(myogest_.data==BACKWARD.data)
+      {
+        	//ROS_INFO("BACKWARD");
+        	myo_state=2;
+	}	
+      if(myogest_.data==FORWARD.data)
+      {
+	      //ROS_INFO("FORWARD");
+	      myo_state=1;
+      }
+       if(myogest_.data==SWITCHMODE.data)
+      {
+	      //ROS_INFO("FORWARD");
+	      myo_state=3;
+      }
+}*/
+
 
 int main(int argc, char **argv)
 {     
       /*Initialise Variables*/
       
-      //Initial position
-      
-      pose.position.x = 0;
-      pose.position.y = 0;
-      //Real Position
-      //pose.position.z = 375;
-      old_pose=pose;
-      //Simulation position
-      pose.position.z = 859.9;
       CAPTURE_MOVEMENT=false;//know when you have reach the maximum of points to handle
       //Creating the joint_msg_leap
-      joint_msg_leap.name.resize(7);
-      joint_msg_leap.position.resize(7);
+      joint_msg_leap.name.resize(8);
+      joint_msg_leap.position.resize(8);
       joint_msg_leap.name[0]="arm_1_joint";
       joint_msg_leap.name[1]="arm_2_joint";
       joint_msg_leap.name[2]="arm_3_joint";
       joint_msg_leap.name[3]="arm_4_joint";
       joint_msg_leap.name[4]="arm_5_joint";
       joint_msg_leap.name[5]="arm_6_joint";
-      joint_msg_leap.name[6]="pg70_finger_left_joint";
+      joint_msg_leap.name[6]="base_joint_gripper_left";
+      joint_msg_leap.name[7]="base_joint_gripper_right";
       aux_enter=1;
       FIRST_VALUE=true;//Help knowing Initial Position of the hand
       int arm_trajectory_point=1;
+      
       collision_detection::CollisionRequest collision_request;
       collision_detection::CollisionResult collision_result;
       moveit_msgs::DisplayTrajectory display_trajectory;
-     
-      /*Finish Variables Initialitation*/     
+      
+      /*Finish Variables Initialitation*/
+
       //ROS DECLARATION
       ros::init(argc, argv,"listener");
       if (argc != 2)
@@ -416,14 +309,21 @@ int main(int argc, char **argv)
       //Create an object of the LeapMotionListener Class
       LeapMotionListener leapmotionlistener;
       leapmotionlistener.Configure(count);
+      
       //ros::NodeHandle node_handle;
       ros::NodeHandle node_handle("~");
       // start a ROS spinning thread
- 
+      //ros::AsyncSpinner spinner(1);
+      //spinner.start();
+      //we need this for leap
+      //ros::Rate r(1);
+      
+      
+      
       robot_model_loader::RobotModelLoader robot_model_loader("robot_description");
       robot_model::RobotModelPtr robot_model = robot_model_loader.getModel();
       
-      // MOVEIT Setup
+      /* MOVEIT Setup*/
       // ^^^^^
       moveit::planning_interface::MoveGroup group("arm");
       group.setPlanningTime(0.5);
@@ -434,19 +334,52 @@ int main(int argc, char **argv)
       
       // Create a publisher for visualizing plans in Rviz.
       ros::Publisher display_publisher = node_handle.advertise<moveit_msgs::DisplayTrajectory>("/move_group/display_planned_path", 1, true);
-      
-      
-      // Sleep a little to allow time to startup rviz, etc. 
-      //ros::WallDuration sleep_time(15.0);
-      //sleep_time.sleep();  
-      //end of MOVEIT Setup
+
+
+      /* Sleep a little to allow time to startup rviz, etc. */
+      ros::WallDuration sleep_time(15.0);
+      sleep_time.sleep();  
+      /*end of MOVEIT Setup*/
 
       // We can print the name of the reference frame for this robot.
       ROS_INFO("Reference frame: %s", group.getPlanningFrame().c_str());
       // We can also print the name of the end-effector link for this group.
       ROS_INFO("Reference frame: %s", group.getEndEffectorLink().c_str());
       
+      // Planning to a Pose goal 1
+      // ^^^^^^^^^^^^^^^^^^^^^^^
+      // We can plan a motion for this group to a desired pose for the 
+      // end-effector  
+      ROS_INFO("Planning to INITIAL POSE");
+      
+      geometry_msgs::Pose pose;
+      pose.position.x = 0.0;
+      pose.position.y = 0.3;
+      pose.position.z = 0.7;
+      pose.orientation.w = 1.0;
+      //std::vector<double> tolerance_pose(3, 0.01);
+      //std::vector<double> tolerance_angle(3, 0.01);
+      old_pose=pose;
+      group.setPoseTarget(pose);
+      bool success = group.plan(my_plan);
+      ROS_INFO("Visualizing plan 1 (pose goal) %s",success?"":"FAILED");
 
+      // Visualize the result
+      // ^^^^^^^^^^^^^^^^^^^^
+      /* Visualize the trajectory */
+      if (1)
+      {
+      
+      display_trajectory.trajectory_start = my_plan.start_state_;
+      display_trajectory.trajectory.push_back(my_plan.trajectory_);
+      display_publisher.publish(display_trajectory);
+      sleep(5.0);
+      }
+      /* End Planning to a Pose goal 1*/
+
+     // First, set the state in the planning scene to the final state of the last plan 
+     
+      robot_state::RobotState start_state(*group.getCurrentState());
       //joint_model_group = start_state.getJointModelGroup("arm");
       //start_state.setJointGroupPositions(joint_model_group, my_plan.trajectory_.joint_trajectory.points.back().positions);
       //group.setStartState(start_state);
@@ -454,7 +387,7 @@ int main(int argc, char **argv)
       //spinner.stop();
       
 
-      // Adding/Removing Objects and Attaching/Detaching Objects
+      /* Adding/Removing Objects and Attaching/Detaching Objects*/
       ROS_INFO("CREATING PLANNING_SCENE PUBLISHER");
       ros::Publisher planning_scene_diff_publisher = node_handle.advertise<moveit_msgs::PlanningScene>("/planning_scene", 1);
       while(planning_scene_diff_publisher.getNumSubscribers() < 1)
@@ -471,13 +404,13 @@ int main(int argc, char **argv)
       left_wall.header.frame_id = group.getPlanningFrame();
       top_roof.header.frame_id = group.getPlanningFrame();
       collision_object.header.frame_id = group.getPlanningFrame();
-      // The id of the object is used to identify it. 
+      /* The id of the object is used to identify it. */
       right_wall.id = "right_wall";
       left_wall.id = "left_wall";
       top_roof.id = "top_roof";
       base.id = "base"; 
       collision_object.id = "box1";       
-      // Define the lateral wall to add them to the world. 
+      /* Define the lateral wall to add them to the world. */
       shape_msgs::SolidPrimitive side_wall1;
       side_wall1.type = side_wall1.BOX;
       side_wall1.dimensions.resize(3);
@@ -503,9 +436,9 @@ int main(int argc, char **argv)
       shape_msgs::SolidPrimitive primitive;
       primitive.type = primitive.BOX;
       primitive.dimensions.resize(3);
-      primitive.dimensions[0] = 0.8;
-      primitive.dimensions[1] = 0.03;
-      primitive.dimensions[2] = 0.8;
+      primitive.dimensions[0] = 0.25;
+      primitive.dimensions[1] = 0.1;
+      primitive.dimensions[2] = 0.25;
       
       // Pose of the right wall 
       geometry_msgs::Pose right_pose;
@@ -537,24 +470,13 @@ int main(int argc, char **argv)
       top_pose.position.x = -0.055;
       top_pose.position.z =  0.775;
       
-      // A pose for the box (specified relative to frame_id) 
+      /* A pose for the box (specified relative to frame_id) */
       geometry_msgs::Pose box_pose;
       box_pose.orientation.w = 1.0;
       box_pose.position.x =  -0.15;
       box_pose.position.y =  0.15;
       box_pose.position.z =  0.7;
-       
-      robo_pub = node_handle.advertise<sensor_msgs::JointState>("/joint_leap", 1);
-      robo_sub = node_handle.subscribe("/joint_states", 1, joinstateCallback);
-      ros::ServiceClient clientinit = node_handle.serviceClient<sensor_listener::InitHaltAPI>("/InitHaltAPI");
-      sensor_listener::InitHaltAPI srvinit;
-      ros::Rate r(10);
       
-      //Positioning COLLISION OBJECTS
-      // Planning to a Pose goal 1
-      // ^^^^^^^^^^^^^^^^^^^^^^^
-      // We can plan a motion for this group to a desired pose for the 
-      // end-effector
       //collision box 
       collision_object.primitives.push_back(primitive);
       collision_object.primitive_poses.push_back(box_pose);
@@ -581,7 +503,6 @@ int main(int argc, char **argv)
       base.primitive_poses.push_back(base_pose);
       base.operation = base.ADD;
       */
-      
       std::vector<moveit_msgs::CollisionObject> collision_objects;
       collision_objects.push_back(collision_object);
       //collision_objects.push_back(right_wall);
@@ -600,14 +521,38 @@ int main(int argc, char **argv)
       planning_scene_msg.is_diff = true;
       planning_scene_diff_publisher.publish(planning_scene_msg);
       //sleep_time.sleep();
-      // END Positioning COLLISION OBJECTS      
+      
+      // Planning to a Pose goal 2 with the object
+      // ^^^^^^^^^^^^^^^^^^^^^^^
+      // We can plan a motion for this group to a desired pose for the 
+      // end-effector  
+      ROS_INFO("Planning to INITIAL POSE");
+      group.setPlanningTime(10.0);
+      group.setStartState(*group.getCurrentState());
+      geometry_msgs::Pose pose2;
+      pose2.position.x = 0.0;
+      pose2.position.y = 0.3;
+      pose2.position.z = 0.7;
+      pose2.orientation.w = 1.0;
+      //std::vector<double> tolerance_pose(3, 0.01);
+      //std::vector<double> tolerance_angle(3, 0.01);
+      //old_pose=pose;
+      group.setPoseTarget(pose2);
+       success = group.plan(my_plan);
+      ROS_INFO("Visualizing plan 2 collision test %s",success?"":"FAILED");
+
+ 
       
       
-      
+      robo_pub = node_handle.advertise<sensor_msgs::JointState>("/joint_leap", 1);
+      robo_sub = node_handle.subscribe("/joint_states", 1, joinstateCallback);
+      ros::ServiceClient clientinit = node_handle.serviceClient<sensor_listener::InitHaltAPI>("/InitHaltAPI");
+      sensor_listener::InitHaltAPI srvinit;
+      ros::Rate r(10);
       ROS_INFO("PRESH LEFT PEDAL TO START");
-      while((acept=getchar())!= '1')      
+      while((s=getchar())!= '1')      
         ROS_INFO("PRESH LEFT PEDAL TO START");
-      //srvinit.request.command=command;
+      srvinit.request.command=command;
       ROS_INFO("SUBSCRIBING LEAPMOTION");
       ros::Subscriber leapsub = node_handle.subscribe("/leapmotion/data", 1, &LeapMotionListener::leapmotionCallback, &leapmotionlistener);
 
@@ -623,112 +568,6 @@ int main(int argc, char **argv)
       }
       leapsub.shutdown();
       ROS_INFO("CAPTURING POINTS FINISH");
-      sleep(3);
-      ros::AsyncSpinner spinner(1);
-      spinner.start();
-       
-      
-           // Planning PHASE
-      // ^^^^^^^^^^^^^^^^^^^^^^^
-      // We check for collision in this phase and create our new trajectory without collision
-      //   
-      ROS_INFO("Planning PHASE");
-      group.setStartState(*group.getCurrentState());
-      //
-      for (unsigned i=0; i<joint_position_vector.size(); i++)
-      {
-        group.setJointValueTarget(joint_position_vector.at(i));
-        bool success = group.plan(my_plan);
-        ROS_INFO("Visualizing plan 1 (joint space goal) %s",success?"":"FAILED");
-        if(success)
-        {
-        ROS_INFO("END EFFECTOR POSITION \n X: %f\n  Y: %f\n Z: %f\n",pose_vector.at(i).position.x,pose_vector.at(i).position.y,pose_vector.at(i).position.z);     
-        // End Planning to a Pose goal 1
-        // First, set the state in the planning scene to the final state of the last plan        
-        robot_state::RobotState start_state(*group.getCurrentState());
-        joint_msg_leap.position[0]=static_cast<float>((joint_position_vector.at(i)[0]));
-        joint_msg_leap.position[1]=static_cast<float>((joint_position_vector.at(i)[1]));
-        joint_msg_leap.position[2]=static_cast<float>((joint_position_vector.at(i)[2]));
-        joint_msg_leap.position[3]=static_cast<float>((joint_position_vector.at(i)[3]));
-        joint_msg_leap.position[4]=static_cast<float>((joint_position_vector.at(i)[4]));
-        joint_msg_leap.position[5]=static_cast<float>((joint_position_vector.at(i)[5]));
-        robo_pub.publish(joint_msg_leap);
-        joint_position_corr_vector.push_back(joint_position_vector.at(i));
-        //display_trajectory.trajectory_start = my_plan.start_state_;
-        //display_trajectory.trajectory.push_back(my_plan.trajectory_);
-        //display_publisher.publish(display_trajectory);
-        
-        }
-       }
-      end=false;
-      spinner.stop();
-      sleep(3);
-      while (end)
-      {
-      ROS_INFO("WAITING");
-       }
-      /*ROS_INFO("TEST 2");
-      
-      for (unsigned i=0; i<joint_position_vector.size(); i++)
-      {
-        joint_msg_leap.position[0]=static_cast<float>((joint_position_vector.at(i)[0]));
-        joint_msg_leap.position[1]=static_cast<float>((joint_position_vector.at(i)[1]));
-        joint_msg_leap.position[2]=static_cast<float>((joint_position_vector.at(i)[2]));
-        joint_msg_leap.position[3]=static_cast<float>((joint_position_vector.at(i)[3]));
-        joint_msg_leap.position[4]=static_cast<float>((joint_position_vector.at(i)[4]));
-        joint_msg_leap.position[5]=static_cast<float>((joint_position_vector.at(i)[5]));
-        robo_pub.publish(joint_msg_leap);
-        sleep(1);
-      }  
-      sleep(3);*/
-      // No Collision PHASE
-      // ^^^^^^^^^^^^^^^^^^^^
-      // Visualize the trajectory without collision
-      ROS_INFO("No-Collision PHASE");
-      for (unsigned i=0; i<joint_position_corr_vector.size(); i++)
-      {
-      ROS_INFO("JOINT POSITION \n J1: %f\n  J2: %f\n J3: %f\n J4: %f\n  J5: %f\n J6: %f\n",joint_position_corr_vector.at(i)[0],joint_position_corr_vector.at(i)[1],joint_position_corr_vector.at(i)[2],joint_position_corr_vector.at(i)[3],joint_position_corr_vector.at(i)[4],joint_position_corr_vector.at(i)[5]);
-      joint_msg_leap.position[0]=static_cast<float>((joint_position_corr_vector.at(i)[0]));
-      joint_msg_leap.position[1]=static_cast<float>((joint_position_corr_vector.at(i)[1]));
-      joint_msg_leap.position[2]=static_cast<float>((joint_position_corr_vector.at(i)[2]));
-      joint_msg_leap.position[3]=static_cast<float>((joint_position_corr_vector.at(i)[3]));
-      joint_msg_leap.position[4]=static_cast<float>((joint_position_corr_vector.at(i)[4]));
-      joint_msg_leap.position[5]=static_cast<float>((joint_position_corr_vector.at(i)[5]));
-      robo_pub.publish(joint_msg_leap);
-      ros::Duration(0.3).sleep();
-      }
-      
-      // Visualize the result
-      // ^^^^^^^^^^^^^^^^^^^^
-      // Visualize the trajectory 
-      /*if (1)
-      {       
-      display_trajectory.trajectory_start = my_plan.start_state_;
-      display_trajectory.trajectory.push_back(my_plan.trajectory_);
-      display_publisher.publish(display_trajectory);
-      }*/        
-    
-    
-      
-      // Planning to a Pose goal 2 with the object
-      // ^^^^^^^^^^^^^^^^^^^^^^^
-      // We can plan a motion for this group to a desired pose for the 
-      // end-effector  
-      /*ROS_INFO("Planning to INITIAL POSE");
-      group.setPlanningTime(10.0);
-      group.setStartState(*group.getCurrentState());
-      geometry_msgs::Pose pose2;
-      pose2.position.x = 0.0;
-      pose2.position.y = 0.3;
-      pose2.position.z = 0.7;
-      pose2.orientation.w = 1.0;
-      //std::vector<double> tolerance_pose(3, 0.01);
-      //std::vector<double> tolerance_angle(3, 0.01);
-      //old_pose=pose;
-      group.setPoseTarget(pose2);
-      bool success = group.plan(my_plan);
-      ROS_INFO("Visualizing plan 2 collision test %s",success?"":"FAILED");
-      */
       // End of Capturing Stage
       return 0;
      // Visualize the result

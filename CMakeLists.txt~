@@ -118,9 +118,9 @@ include_directories(
 
 ## Declare a cpp executable
 #add_executable(listener_learning src/listener_learning.cpp)
-#add_executable(listener_direct src/listener_direct_gripper.cpp)
-add_executable(listener_direct src/listener_direct_gripper.cpp)
-#add_executable(listener src/movegroup_obstacles.cpp)
+add_executable(listener_direct src/listener_direct.cpp)
+#add_executable(listener_direct src listener_direct_gripper.cpp)
+add_executable(listener src/movegroup_obstacles.cpp)
 #add_executable(pedal_security src/pedal_security.cpp)
 
 ## Add cmake target dependencies of the executable/library
@@ -128,14 +128,12 @@ add_executable(listener_direct src/listener_direct_gripper.cpp)
 #add_dependencies( leap_motion_listener_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(listener_learning
-#   ${catkin_LIBRARIES}
-#)
- #target_link_libraries(listener
-#  ${catkin_LIBRARIES}
-#)
- target_link_libraries(listener_direct
-   ${catkin_LIBRARIES} -lpython2.7
+target_link_libraries(listener
+   ${catkin_LIBRARIES} 
+)
+
+target_link_libraries(listener_direct
+  ${catkin_LIBRARIES} -lpython2.7
 )
 
 
@@ -157,6 +155,8 @@ add_executable(listener_direct src/listener_direct_gripper.cpp)
  install(PROGRAMS
    src/pedal_security.py
    src/kinematic_functions.py
+   src/schunk_api_node_sim.py
+   src/schunk_api_node_collision.py
    src/schunk_api_node.py
    src/test.py
    src/powerball_constants.py 

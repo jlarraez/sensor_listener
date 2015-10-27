@@ -401,12 +401,28 @@ int main(int argc, char **argv)
       }
       ROS_INFO("CREATING COLLISIO NOBJECT");
       
+      moveit_msgs::CollisionObject right_wall;
       moveit_msgs::CollisionObject collision_object;
+      right_wall.header.frame_id = group.getPlanningFrame();
       collision_object.header.frame_id = group.getPlanningFrame();
+      /* The id of the object is used to identify it. */
+      right_wall.id = "right_wall";
+      /* Define a box to add to the world. */
+      shape_msgs::SolidPrimitive side_wall1;
+      side_wall1.type = side_wall1.BOX;
+      side_wall1.dimensions.resize(3);
+      side_wall1.dimensions[0] = 0.115;
+      side_wall1.dimensions[1] = 0.24;
+      side_wall1.dimensions[2] = 0.83;
 
+      /* A pose for the box (specified relative to frame_id) */
+      geometry_msgs::Pose right_pose;
+      right_pose.orientation.w = 1.0;
+      right_pose.position.x =  0.2575;
+      right_pose.position.y = -0.1;
+      right_pose.position.z =  0.415;
       /* The id of the object is used to identify it. */
       collision_object.id = "box1";
-
       /* Define a box to add to the world. */
       shape_msgs::SolidPrimitive primitive;
       primitive.type = primitive.BOX;
@@ -414,7 +430,6 @@ int main(int argc, char **argv)
       primitive.dimensions[0] = 0.4;
       primitive.dimensions[1] = 0.1;
       primitive.dimensions[2] = 0.4;
-
       /* A pose for the box (specified relative to frame_id) */
       geometry_msgs::Pose box_pose;
       box_pose.orientation.w = 1.0;
@@ -424,10 +439,14 @@ int main(int argc, char **argv)
 
       collision_object.primitives.push_back(primitive);
       collision_object.primitive_poses.push_back(box_pose);
+      right_wall.primitives.push_back(side_wall1);
+      right_wall.primitive_poses.push_back(right_pose);
       collision_object.operation = collision_object.ADD;
+      right_wall.operation=right_wall.ADD
 
       std::vector<moveit_msgs::CollisionObject> collision_objects;
       collision_objects.push_back(collision_object);
+      collision_objects.push_back(right_wall);
 
       
       ROS_INFO("ADDING COLLISION OBJECT TO THE WORLD");
